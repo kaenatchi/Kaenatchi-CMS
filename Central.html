@@ -76,7 +76,7 @@ function showPanel(id,btn){
 
 function runServer(name,args){
  return new Promise((resolve,reject)=>{
-   if(!google || !google.script || !google.script.run){reject(new Error('اتصال به Google Apps Script برقرار نیست.'));return;}
+   if(typeof google === 'undefined' || !google.script || !google.script.run{reject(new Error('اتصال به Google Apps Script برقرار نیست.'));return;}
    let runner=google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
    runner[name](...(args||[]));
  });
