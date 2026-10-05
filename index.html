@@ -25,12 +25,12 @@
 </nav>
 
 <section id="content" class="view active">
-<div class="head"><h2>🌿 مدیریت محتوا</h2><p>ساختار مدیریت خدمات، کلاس‌ها، ایونت‌ها، FAQ، صفحات و تنظیمات.</p></div>
+<div class="head"><h2>🌿 مدیریت محتوا</h2><p>اطلاعات خدمات از CMS اصلی کائنات‌چی خوانده می‌شود.</p></div>
 <div class="cards">
-<div class="stat"><div class="icon">🔮</div><b>خدمات</b><small>مدیریت خدمات Mini App</small></div>
-<div class="stat"><div class="icon">🎓</div><b>کلاس‌ها</b><small>برنامه و محتوای کلاس‌ها</small></div>
-<div class="stat"><div class="icon">✦</div><b>ایونت‌ها</b><small>رویدادهای آینده</small></div>
-<div class="stat"><div class="icon">⚙️</div><b>تنظیمات</b><small>محتوای عمومی و لینک‌ها</small></div>
+<div class="stat"><div class="icon">🔮</div><b>خدمات</b><small id="serviceCount">در حال دریافت…</small></div>
+<div class="stat"><div class="icon">🎓</div><b>کلاس‌ها</b><small>در مرحله بعد</small></div>
+<div class="stat"><div class="icon">✦</div><b>ایونت‌ها</b><small>در مرحله بعد</small></div>
+<div class="stat"><div class="icon">⚙️</div><b>تنظیمات</b><small>در مرحله بعد</small></div>
 </div>
 <div class="card">
 <div class="subnav">
@@ -41,12 +41,15 @@
 <button class="sub" data-module="pages">صفحات</button>
 <button class="sub" data-module="settings">تنظیمات</button>
 </div>
-<div id="services" class="module active"><div class="section-title"><h3>خدمات</h3><span>CMS</span></div><div class="rows"><div class="row"><div class="row-main"><b>انرژی‌خوانی</b><span>محتوای خدمت از CMS خوانده می‌شود.</span></div><span class="badge">فعال</span></div></div></div>
-<div id="courses" class="module"><div class="section-title"><h3>کلاس‌ها</h3><span>CMS</span></div><div class="notice">کلاس‌ها در این پنل به‌صورت کارت و فرم مدیریت خواهند شد؛ اتصال داده در مرحله API انجام می‌شود.</div></div>
-<div id="events" class="module"><div class="section-title"><h3>ایونت‌ها</h3><span>CMS</span></div><div class="notice">ایونت‌ها در همین صفحه مدیریت می‌شوند و مشتری فقط موارد فعال را در Mini App می‌بیند.</div></div>
-<div id="faq" class="module"><div class="section-title"><h3>FAQ</h3><span>CMS</span></div><div class="notice">سؤال و جواب‌ها بدون ویرایش کد مدیریت خواهند شد.</div></div>
-<div id="pages" class="module"><div class="section-title"><h3>صفحات</h3><span>CMS</span></div><div class="notice">صفحات محتوایی مستقل در این بخش مدیریت می‌شوند.</div></div>
-<div id="settings" class="module"><div class="section-title"><h3>تنظیمات</h3><span>CMS</span></div><div class="notice">لینک‌ها، ساعات کاری و متن‌های عمومی از این بخش کنترل می‌شوند.</div></div>
+<div id="services" class="module active">
+<div class="section-title"><h3>خدمات</h3><span id="cmsStatus">در حال اتصال…</span></div>
+<div id="servicesList" class="rows"><div class="notice">در حال دریافت خدمات از CMS…</div></div>
+</div>
+<div id="courses" class="module"><div class="section-title"><h3>کلاس‌ها</h3><span>مرحله بعد</span></div><div class="notice">این بخش بعد از تست کامل خدمات متصل می‌شود.</div></div>
+<div id="events" class="module"><div class="section-title"><h3>ایونت‌ها</h3><span>مرحله بعد</span></div><div class="notice">این بخش بعد از تست کامل خدمات متصل می‌شود.</div></div>
+<div id="faq" class="module"><div class="section-title"><h3>FAQ</h3><span>مرحله بعد</span></div><div class="notice">این بخش بعد از تست کامل خدمات متصل می‌شود.</div></div>
+<div id="pages" class="module"><div class="section-title"><h3>صفحات</h3><span>مرحله بعد</span></div><div class="notice">این بخش بعد از تست کامل خدمات متصل می‌شود.</div></div>
+<div id="settings" class="module"><div class="section-title"><h3>تنظیمات</h3><span>مرحله بعد</span></div><div class="notice">این بخش بعد از تست کامل خدمات متصل می‌شود.</div></div>
 </div>
 </section>
 
@@ -77,6 +80,34 @@
 <script>
 document.querySelectorAll('.navbtn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(btn.dataset.view).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}));
 document.querySelectorAll('.sub').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.sub').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.module').forEach(x=>x.classList.remove('active'));document.getElementById(btn.dataset.module).classList.add('active');}));
+</script>
+<script>
+const CMS_API='https://script.google.com/macros/s/AKfycbzgocb54x4FDOQl3C8-o2WnipZuQYkM1j1juV-ZZKHoieN7DbrybTj3WyXbJe5I2nMhXw/exec';
+async function loadServicesFromCMS(){
+  const list=document.getElementById('servicesList');
+  const status=document.getElementById('cmsStatus');
+  const count=document.getElementById('serviceCount');
+  try{
+    const response=await fetch(CMS_API+'?action=getMiniAppData',{cache:'no-store'});
+    if(!response.ok) throw new Error('HTTP '+response.status);
+    const data=await response.json();
+    const rows=Array.isArray(data.services)?data.services:[];
+    count.textContent=rows.length+' خدمت فعال';
+    status.textContent='متصل به CMS';
+    if(!rows.length){list.innerHTML='<div class="empty">هیچ خدمت فعالی در CMS ثبت نشده است.</div>';return;}
+    list.innerHTML=rows.map(row=>{
+      const name=row['نام خدمت']||row['name']||row['عنوان']||'خدمت بدون نام';
+      const category=row['دسته']||row['دسته‌بندی']||'';
+      const desc=row['توضیح کوتاه']||row['توضیحات']||'';
+      return '<div class="row"><div class="row-main"><b>'+esc(name)+'</b><span>'+esc(category||desc||'اطلاعات خدمت از CMS دریافت شد.')+'</span></div><span class="badge">فعال</span></div>';
+    }).join('');
+  }catch(error){
+    count.textContent='خطا در دریافت';
+    status.textContent='اتصال ناموفق';
+    list.innerHTML='<div class="notice"><b>اتصال به CMS برقرار نشد.</b><br>'+esc(error.message||error)+'</div>';
+  }
+}
+loadServicesFromCMS();
 </script>
 </body>
 </html>
