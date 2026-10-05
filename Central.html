@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>پنل مدیریت کائنات‌چی</title>
+<style>
+:root{--cream:#f6f0e4;--card:#fffdf8;--green:#294f3d;--green2:#376b52;--gold:#a58b5b;--ink:#26382e;--muted:#758078;--line:#e4dac8;--shadow:0 14px 38px rgba(42,65,52,.10)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#fff,transparent 38%),var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}
+.app{max-width:1100px;margin:auto;padding:18px 14px 40px}.hero{background:linear-gradient(135deg,var(--green),#183b2d);color:#fff;border-radius:30px;padding:25px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07);left:-50px;bottom:-90px}.brand{font-size:12px;opacity:.72;margin-bottom:7px}.hero h1{margin:0;font-size:25px}.hero p{margin:8px 0 0;opacity:.82;font-size:13px}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.tab{border:1px solid var(--line);background:var(--card);border-radius:17px;padding:14px 8px;color:var(--ink);font-weight:700;box-shadow:0 7px 20px rgba(42,65,52,.06)}.tab.active{background:var(--green);color:#fff;border-color:var(--green)}.panel{display:none}.panel.active{display:block}.section-head{margin:8px 2px 13px}.section-head h2{margin:0;font-size:19px}.section-head p{margin:5px 0;color:var(--muted);font-size:12px;line-height:1.8}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--shadow)}.icon{font-size:27px;margin-bottom:10px}.card h3{margin:0 0 6px;font-size:16px}.card p{margin:0 0 14px;color:var(--muted);font-size:11px;line-height:1.8}.btn{display:block;width:100%;border:0;border-radius:13px;padding:11px;background:var(--green);color:#fff;text-decoration:none;text-align:center;font-size:12px;font-weight:700}.btn.alt{background:#f2ecdf;color:var(--green);border:1px solid var(--line)}.note{margin-top:14px;background:#f1eadc;border:1px solid #e0d3bb;border-radius:18px;padding:13px;font-size:11px;line-height:1.9;color:#69746d}.frame-wrap{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--shadow)}iframe{display:block;width:100%;height:680px;border:0;background:#fff}.top-actions{display:flex;gap:8px;margin-bottom:12px}.small{flex:1}.footer{text-align:center;color:#8a918b;font-size:10px;margin-top:25px}@media(max-width:650px){.grid{grid-template-columns:1fr}.tabs{position:sticky;top:8px;z-index:5}.tab{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="hero"><div class="brand">KAENATCHI</div><h1>🌿 پنل مدیریت کائنات‌چی</h1><p>یک ورودی واحد برای مدیریت محتوا، نوبت‌دهی و VIP</p></header>
+<nav class="tabs">
+<button class="tab active" onclick="show('cms',this)">🌿 محتوا</button>
+<button class="tab" onclick="show('booking',this)">📅 نوبت‌ها</button>
+<button class="tab" onclick="show('vip',this)">⭐ VIP</button>
+</nav>
+
+<section id="cms" class="panel active">
+<div class="section-head"><h2>🌿 مدیریت Mini App</h2><p>خدمات، کلاس‌ها، ایونت‌ها، FAQ، صفحات و تنظیمات از همین مسیر مدیریت می‌شوند.</p></div>
+<div class="top-actions"><a class="btn small" target="_blank" href="?page=admin&section=content">↗ باز کردن مدیریت محتوا</a></div>
+<div class="frame-wrap"><iframe src="?page=admin&section=content" title="مدیریت محتوا"></iframe></div>
+</section>
+
+<section id="booking" class="panel">
+<div class="section-head"><h2>📅 مدیریت نوبت‌ها</h2><p>ورود از همین پنل به سامانه فعلی نوبت‌دهی؛ سیستم رزرو موجود دست‌نخورده باقی می‌ماند.</p></div>
+<div class="grid">
+<div class="card"><div class="icon">📅</div><h3>سامانه نوبت‌دهی</h3><p>باز کردن سامانه فعلی کائنات‌چی برای بررسی عملکرد رزرو.</p><a class="btn" target="_blank" href="https://script.google.com/macros/s/AKfycbyGSzpV9iHxMsVmceAI4i5KIhbsttuD5pOkDqRK58mx-QlP60CWjg2PZfU5miLgN2ssSw/exec">باز کردن سامانه</a></div>
+<div class="card"><div class="icon">🛡️</div><h3>مدیریت نوبت‌ها</h3><p>جایگاه مدیریت مستقیم نوبت‌ها در پنل مرکزی؛ اتصال مدیریتی به بک‌اند فعلی باید بدون تغییر منطق رزرو انجام شود.</p><button class="btn alt" onclick="alert('این بخش برای اتصال مدیریتی مستقیم آماده شده و مرحله بعدی آن اتصال امن به بک‌اند نوبت‌دهی است.')">وضعیت اتصال</button></div>
+</div>
+<div class="note">⚠️ منطق رزرو، جلوگیری از دوباره‌رزرو شدن، پرداخت و فیش در سیستم فعلی باقی می‌ماند؛ پنل مرکزی نباید آن‌ها را خراب یا جایگزین کند.</div>
+</section>
+
+<section id="vip" class="panel">
+<div class="section-head"><h2>⭐ مدیریت VIP</h2><p>دسترسی از همان لینک مرکزی به پنل VIP فعلی.</p></div>
+<div class="grid">
+<div class="card"><div class="icon">⭐</div><h3>پنل مدیریت VIP</h3><p>مدیریت اعضا، وضعیت VIP، توکن‌ها و اطلاعات موجود در سیستم VIP.</p><a class="btn" target="_blank" href="https://script.google.com/macros/s/AKfycbSl6RH5K7oTLBus2cjvBJuOv-ZTjIhX9OnIq93gifQng1IfMl7f2A3Bl-7pSx1nC1u/exec?page=admin">باز کردن پنل VIP</a></div>
+<div class="card"><div class="icon">🔐</div><h3>سیستم فعلی VIP</h3><p>داده‌ها و منطق فعلی VIP جدا می‌مانند تا عضویت و توکن‌ها آسیب نبینند.</p><button class="btn alt" onclick="alert('اتصال مرکزی VIP به پنل فعلی برقرار است؛ ادغام کامل عملیات مدیریتی در همین صفحه مرحله بعدی است.')">وضعیت اتصال</button></div>
+</div>
+</section>
+<div class="footer">کائنات‌چی · پنل مدیریت مرکزی</div>
+</div>
+<script>
+function show(id,btn){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+</script>
+</body></html>
