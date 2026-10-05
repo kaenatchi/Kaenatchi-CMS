@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#294f3d">
+<title>پنل مدیریت کائنات‌چی</title>
+<style>
+:root{--bg:#f5efe3;--card:#fffdf8;--green:#294f3d;--green2:#376b52;--gold:#a58b5b;--ink:#26382e;--muted:#7a847d;--line:#e6dccb;--danger:#a24e4e;--shadow:0 14px 36px rgba(38,61,48,.10)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -8%,#fff 0,transparent 34%),var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}.shell{max-width:1180px;margin:auto;padding:16px 14px 42px}.hero{position:relative;overflow:hidden;border-radius:28px;padding:24px 20px;background:linear-gradient(135deg,#294f3d,#183b2d);color:#fff;box-shadow:var(--shadow)}.hero:after{content:"";position:absolute;width:170px;height:170px;border-radius:50%;left:-65px;top:-75px;background:rgba(255,255,255,.06)}.eyebrow{font-size:11px;letter-spacing:.12em;opacity:.7}.hero h1{margin:6px 0 0;font-family:Georgia,"Times New Roman",serif;font-size:26px}.hero p{margin:8px 0 0;font-size:12px;opacity:.8}.mainnav{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0;position:sticky;top:8px;z-index:10}.navbtn{border:1px solid var(--line);border-radius:17px;padding:14px 9px;background:rgba(255,253,248,.94);color:var(--ink);font-weight:800;box-shadow:0 7px 20px rgba(38,61,48,.07);cursor:pointer}.navbtn.active{background:var(--green);border-color:var(--green);color:#fff}.view{display:none}.view.active{display:block}.head{margin:16px 2px 12px}.head h2{margin:0;font-size:20px}.head p{margin:5px 0;color:var(--muted);font-size:12px;line-height:1.8}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}.stat .icon{font-size:22px}.stat b{display:block;margin-top:8px;font-size:13px}.stat small{display:block;color:var(--muted);margin-top:4px;font-size:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:17px;box-shadow:var(--shadow);margin-top:12px}.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px}.section-title h3{margin:0;font-size:15px}.section-title span{font-size:11px;color:var(--muted)}.subnav{display:flex;gap:7px;overflow:auto;padding:2px 0 7px}.sub{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:13px;padding:9px 12px;font-size:11px;font-weight:800;cursor:pointer}.sub.active{background:#ebe1cf;color:var(--green)}.module{display:none}.module.active{display:block}.rows{margin-top:10px;display:grid;gap:8px}.row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:16px;padding:12px;background:#fff}.row-main{min-width:0}.row-main b{font-size:12px;display:block}.row-main span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.badge{display:inline-flex;align-items:center;padding:5px 9px;border-radius:99px;background:#e7efe9;color:var(--green);font-size:10px;font-weight:800}.badge.off{background:#eee;color:#777}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.btn{border:0;border-radius:13px;padding:11px 14px;background:var(--green);color:#fff;font-weight:800;font-size:11px;cursor:pointer}.btn.alt{background:#f1ebdf;color:var(--green);border:1px solid var(--line)}.btn.gold{background:var(--gold)}.notice{padding:12px 14px;border-radius:15px;background:#f7f1e5;color:#5e665f;font-size:11px;line-height:1.9}.footer{text-align:center;color:#8b928d;font-size:10px;margin-top:24px}@media(max-width:780px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.shell{padding:10px 10px 32px}.hero{border-radius:23px}.mainnav{grid-template-columns:1fr 1fr 1fr}.navbtn{font-size:11px;padding:13px 5px}.cards{grid-template-columns:1fr 1fr}.row{align-items:flex-start;flex-direction:column}.actions .btn{flex:1}} 
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="hero">
+<div class="eyebrow">KAENATCHI · ADMIN</div>
+<h1>🌿 پنل مدیریت کائنات‌چی</h1>
+<p>یک پنل مرکزی برای محتوا، نوبت‌ها و VIP — بدون دست‌زدن به منطق فعلی سیستم‌ها.</p>
+</header>
+
+<nav class="mainnav" aria-label="بخش‌های اصلی">
+<button class="navbtn active" data-view="content">🌿 محتوا</button>
+<button class="navbtn" data-view="booking">📅 نوبت‌ها</button>
+<button class="navbtn" data-view="vip">⭐ VIP</button>
+</nav>
+
+<section id="content" class="view active">
+<div class="head"><h2>🌿 مدیریت محتوا</h2><p>ساختار مدیریت خدمات، کلاس‌ها، ایونت‌ها، FAQ، صفحات و تنظیمات.</p></div>
+<div class="cards">
+<div class="stat"><div class="icon">🔮</div><b>خدمات</b><small>مدیریت خدمات Mini App</small></div>
+<div class="stat"><div class="icon">🎓</div><b>کلاس‌ها</b><small>برنامه و محتوای کلاس‌ها</small></div>
+<div class="stat"><div class="icon">✦</div><b>ایونت‌ها</b><small>رویدادهای آینده</small></div>
+<div class="stat"><div class="icon">⚙️</div><b>تنظیمات</b><small>محتوای عمومی و لینک‌ها</small></div>
+</div>
+<div class="card">
+<div class="subnav">
+<button class="sub active" data-module="services">خدمات</button>
+<button class="sub" data-module="courses">کلاس‌ها</button>
+<button class="sub" data-module="events">ایونت‌ها</button>
+<button class="sub" data-module="faq">FAQ</button>
+<button class="sub" data-module="pages">صفحات</button>
+<button class="sub" data-module="settings">تنظیمات</button>
+</div>
+<div id="services" class="module active"><div class="section-title"><h3>خدمات</h3><span>CMS</span></div><div class="rows"><div class="row"><div class="row-main"><b>انرژی‌خوانی</b><span>محتوای خدمت از CMS خوانده می‌شود.</span></div><span class="badge">فعال</span></div></div></div>
+<div id="courses" class="module"><div class="section-title"><h3>کلاس‌ها</h3><span>CMS</span></div><div class="notice">کلاس‌ها در این پنل به‌صورت کارت و فرم مدیریت خواهند شد؛ اتصال داده در مرحله API انجام می‌شود.</div></div>
+<div id="events" class="module"><div class="section-title"><h3>ایونت‌ها</h3><span>CMS</span></div><div class="notice">ایونت‌ها در همین صفحه مدیریت می‌شوند و مشتری فقط موارد فعال را در Mini App می‌بیند.</div></div>
+<div id="faq" class="module"><div class="section-title"><h3>FAQ</h3><span>CMS</span></div><div class="notice">سؤال و جواب‌ها بدون ویرایش کد مدیریت خواهند شد.</div></div>
+<div id="pages" class="module"><div class="section-title"><h3>صفحات</h3><span>CMS</span></div><div class="notice">صفحات محتوایی مستقل در این بخش مدیریت می‌شوند.</div></div>
+<div id="settings" class="module"><div class="section-title"><h3>تنظیمات</h3><span>CMS</span></div><div class="notice">لینک‌ها، ساعات کاری و متن‌های عمومی از این بخش کنترل می‌شوند.</div></div>
+</div>
+</section>
+
+<section id="booking" class="view">
+<div class="head"><h2>📅 مدیریت نوبت‌ها</h2><p>این بخش رابط مدیریت سیستم Booking فعلی است؛ منطق رزرو و جلوگیری از دوباره‌رزرو جدا باقی می‌ماند.</p></div>
+<div class="cards">
+<div class="stat"><div class="icon">📆</div><b>تعطیلی‌ها</b><small>ثبت بازه‌های بسته</small></div>
+<div class="stat"><div class="icon">🕐</div><b>ساعات کاری</b><small>نمایش وضعیت برنامه</small></div>
+<div class="stat"><div class="icon">⏳</div><b>در انتظار</b><small>نوبت‌های نیازمند بررسی</small></div>
+<div class="stat"><div class="icon">✅</div><b>تأییدشده</b><small>نوبت‌های نهایی</small></div>
+</div>
+<div class="card"><div class="section-title"><h3>🚫 تعطیلی‌ها</h3><span>Jalali</span></div><div class="notice">فرم ثبت تعطیلی، فعال/غیرفعال‌کردن و حذف در همین پنل قرار می‌گیرد. تاریخ‌ها فقط شمسی خواهند بود.</div><div class="actions"><button class="btn" onclick="alert('اتصال Booking در مرحله API متصل می‌شود.')">➕ افزودن تعطیلی</button><button class="btn alt" onclick="alert('اتصال Booking در مرحله API متصل می‌شود.')">↻ به‌روزرسانی</button></div></div>
+</section>
+
+<section id="vip" class="view">
+<div class="head"><h2>⭐ مدیریت VIP</h2><p>مشتری‌ها و توکن‌ها از سیستم VIP فعلی خوانده می‌شوند؛ منطق فعلی VIP بازنویسی نمی‌شود.</p></div>
+<div class="cards">
+<div class="stat"><div class="icon">👤</div><b>مشتریان VIP</b><small>فعال / غیرفعال</small></div>
+<div class="stat"><div class="icon">🎟️</div><b>توکن‌ها</b><small>صدور و وضعیت مصرف</small></div>
+<div class="stat"><div class="icon">🕐</div><b>اعتبار</b><small>تاریخ شمسی</small></div>
+<div class="stat"><div class="icon">📊</div><b>وضعیت</b><small>نمای کلی VIP</small></div>
+</div>
+<div class="card"><div class="section-title"><h3>⭐ مدیریت VIP</h3><span>Backend مستقل</span></div><div class="notice">این بخش عمداً به Backend فعلی VIP متصل خواهد شد؛ هیچ تغییری در منطق مشتری، توکن یا تاریخ‌های شمسی آن انجام نمی‌شود.</div><div class="actions"><button class="btn gold" onclick="alert('اتصال VIP در مرحله API متصل می‌شود.')">👤 مشتریان</button><button class="btn alt" onclick="alert('اتصال VIP در مرحله API متصل می‌شود.')">🎟️ توکن‌ها</button></div></div>
+</section>
+
+<div class="footer">کائنات‌چی · پنل مدیریت مرکزی · Jalali</div>
+</main>
+<script>
+document.querySelectorAll('.navbtn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(btn.dataset.view).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}));
+document.querySelectorAll('.sub').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.sub').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.module').forEach(x=>x.classList.remove('active'));document.getElementById(btn.dataset.module).classList.add('active');}));
+</script>
+</body>
+</html>
