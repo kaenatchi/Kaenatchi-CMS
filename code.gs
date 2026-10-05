@@ -15,7 +15,7 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(getMiniAppData()))
       .setMimeType(ContentService.MimeType.JSON);
   }
-  const page = e && e.parameter && e.parameter.page ? e.parameter.page : 'admin';
+  const page = e && e.parameter && e.parameter.page ? e.parameter.page : 'central';
   return HtmlService
     .createTemplateFromFile(page === 'central' ? 'Central' : 'Admin')
     .evaluate()
