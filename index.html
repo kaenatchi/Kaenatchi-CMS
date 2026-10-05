@@ -3,43 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#294f3d">
-<title>پنل مدیریت کائنات‌چی</title>
-<style>
-:root{--bg:#f5efe3;--green:#294f3d;--line:#e6dccb;--ink:#26382e;--muted:#7a847d}
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;min-height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif}
-body{overflow-x:hidden}
-.shell{min-height:100vh;padding:0}
-.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:rgba(245,239,227,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}
-.brand{font-weight:900;color:var(--green);font-size:15px}
-.brand small{display:block;margin-top:2px;color:var(--muted);font-size:9px;font-weight:700}
-.reload{border:1px solid var(--line);background:#fffdf8;color:var(--green);border-radius:12px;padding:9px 12px;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(38,61,48,.07)}
-.frame-wrap{width:100%;min-height:calc(100vh - 66px);padding:8px}
-iframe{display:block;width:100%;height:calc(100vh - 82px);min-height:760px;border:0;border-radius:22px;background:#fffdf8;box-shadow:0 14px 36px rgba(38,61,48,.10)}
-.note{max-width:1180px;margin:0 auto;padding:0 14px 10px;color:var(--muted);font-size:9px;text-align:center}
-@media(max-width:600px){.topbar{padding:10px}.frame-wrap{padding:5px}iframe{border-radius:16px;min-height:900px;height:calc(100vh - 70px)}}
-</style>
+<title>پنل مدیریت مرکزی کائنات‌چی</title>
+<meta http-equiv="refresh" content="0;url=https://script.google.com/macros/s/AKfycbzgocb54x4FDoQl3C8-o2WnipZuQYkM1j1juV-ZZKHoieN7DbrybTj3WyXbJe5I2nMhXw/exec?page=central">
 </head>
 <body>
-<main class="shell">
-<header class="topbar">
-<div class="brand">🌿 کائنات‌چی<small>پنل مدیریت مرکزی</small></div>
-<button class="reload" type="button" onclick="reloadPanel()">↻ تازه‌سازی پنل</button>
-</header>
-<div class="frame-wrap">
-<iframe id="adminFrame"
-src="https://script.google.com/macros/s/AKfycbzgocb54x4FDOQl3C8-o2WnipZuQYkM1j1juV-ZZKHoieN7DbrybTj3WyXbJe5I2nMhXw/exec?page=central"
-title="پنل مدیریت مرکزی کائنات‌چی"
-allow="clipboard-read; clipboard-write"></iframe>
-</div>
-<div class="note">مدیریت محتوا، نوبت‌ها و VIP از پنل مرکزی انجام می‌شود؛ Google Sheets فقط محل ذخیره‌سازی داده‌هاست.</div>
-</main>
 <script>
-function reloadPanel(){
-  const frame=document.getElementById('adminFrame');
-  frame.src='https://script.google.com/macros/s/AKfycbzgocb54x4FDOQl3C8-o2WnipZuQYkM1j1juV-ZZKHoieN7DbrybTj3WyXbJe5I2nMhXw/exec?page=central&t='+Date.now();
-}
+location.replace("https://script.google.com/macros/s/AKfycbzgocb54x4FDoQl3C8-o2WnipZuQYkM1j1juV-ZZKHoieN7DbrybTj3WyXbJe5I2nMhXw/exec?page=central");
 </script>
 </body>
 </html>
