@@ -99,3 +99,70 @@ function getActiveRows_(rows) {
 function testMiniAppData() {
   console.log(JSON.stringify(getMiniAppData(),null,2));
 }
+
+
+/* =========================================================
+   پنل مرکزی | پروکسی امن مدیریت Booking
+========================================================= */
+
+var CENTRAL_BOOKING_WEB_APP_URL =
+  'https://script.google.com/macros/s/AKfycbyGSzpV9iHxMsVmceAI4i5KIhbsttuD5pOkDqRK58mx-QlP60CWjg2PZfU5miLgN2ssSw/exec';
+
+function getBookingClosures() {
+  var response = UrlFetchApp.fetch(
+    CENTRAL_BOOKING_WEB_APP_URL + '?action=centralAdminClosures',
+    { muteHttpExceptions: true }
+  );
+  var text = response.getContentText();
+  var data = JSON.parse(text);
+  if (!data || data.ok !== true) {
+    throw new Error(data && data.message ? data.message : 'دریافت تعطیلی‌ها ناموفق بود.');
+  }
+  return data;
+}
+
+function addBookingClosure(payload) {
+  return callBookingAdmin_({
+    central_admin_action: 'addClosure',
+    startDate: payload.startDate || '',
+    endDate: payload.endDate || '',
+    startTime: payload.startTime || '00:00',
+    endTime: payload.endTime || '23:59',
+    reason: payload.reason || ''
+  });
+}
+
+function toggleBookingClosure(row) {
+  return callBookingAdmin_({
+    central_admin_action: 'toggleClosure',
+    row: Number(row)
+  });
+}
+
+function deleteBookingClosure(row) {
+  return callBookingAdmin_({
+    central_admin_action: 'deleteClosure',
+    row: Number(row)
+  });
+}
+
+function callBookingAdmin_(payload) {
+  var response = UrlFetchApp.fetch(
+    CENTRAL_BOOKING_WEB_APP_URL,
+    {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    }
+  );
+
+  var text = response.getContentText();
+  var data = JSON.parse(text);
+
+  if (!data || data.ok !== true) {
+    throw new Error(data && data.message ? data.message : 'عملیات نوبت‌دهی ناموفق بود.');
+  }
+
+  return data;
+}
