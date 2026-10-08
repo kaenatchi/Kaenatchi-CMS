@@ -42,6 +42,8 @@ button,input,select,textarea{font-family:inherit}.app{max-width:1120px;margin:au
 <button class="subtab" onclick="showMainTab('events',this)">ایونت‌ها</button>
 <button class="subtab" onclick="showMainTab('faq',this)">FAQ</button>
 <button class="subtab" onclick="showMainTab('pages',this)">صفحات</button>
+<button class="subtab" onclick="showMainTab('contact',this)">💬 ارتباط با ما</button>
+<button class="subtab" onclick="showMainTab('hours',this)">🕐 ساعات کاری</button>
 <button class="subtab" onclick="showMainTab('settings',this)">تنظیمات</button>
 </div>
 <div id="mainContent" class="loading">در حال دریافت محتوا…</div>
@@ -113,8 +115,33 @@ function showMainTab(key,btn){
 function renderMainTab(key){
  const box=document.getElementById('mainContent');
  if(key==='home'){box.innerHTML=mainHome();return;}
+ if(key==='contact'||key==='hours'){renderPageSlice(key);return;}
  const map={services:'services',courses:'courses',events:'events',faq:'faq',pages:'pages',settings:'settings'};
  renderGenericCms(map[key]||key,'mainContent');
+}
+
+function renderPageSlice(key){
+ const title=key==='contact'?'💬 ارتباط با ما':'🕐 ساعات کاری';
+ const terms=key==='contact'?['ارتباط','contact','تماس','whatsapp','اینستاگرام','instagram','تلگرام','telegram']:
+ ['ساعت','hours','کاری','شنبه','پنجشنبه','دوشنبه'];
+ const data=normalizeData(cmsData.pages);
+ const matched=data.rows.filter(r=>{
+   const s=Object.values(r).join(' ').toLowerCase();
+   return terms.some(t=>s.includes(String(t).toLowerCase()));
+ });
+ let html='<div class="card"><div class="crud-head"><div><h3>'+title+'</h3><div class="muted">محتوای این بخش از «صفحات» CMS مدیریت می‌شود و برای جلوگیری از ایجاد رکوردهای تکراری، منبع ذخیره‌سازی همان Pages است.</div></div><button class="btn alt" onclick="jumpMain(\'pages\')">📄 مدیریت همه صفحات</button></div>';
+ if(!matched.length){
+   html+='<div class="empty">هنوز محتوای مشخصی برای این بخش پیدا نشد. از «صفحات» می‌توانی مورد مربوط به '+(key==='contact'?'ارتباط با ما':'ساعات کاری')+' را اضافه یا ویرایش کنی.</div>';
+ }else{
+   html+='<div class="table-wrap"><table class="table"><thead><tr>'+data.headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'<th>عملیات</th></tr></thead><tbody>';
+   matched.forEach(row=>{
+     html+='<tr>'+data.headers.map(h=>'<td>'+cell(h,row[h])+'</td>').join('')+
+       '<td><div class="row-actions"><button class="btn alt" onclick="openCmsForm(\'pages\','+row._row+')">ویرایش</button></div></td></tr>';
+   });
+   html+='</tbody></table></div>';
+ }
+ html+='</div>';
+ document.getElementById('mainContent').innerHTML=html;
 }
 function mainHome(){
  return '<div class="grid">'+
@@ -128,6 +155,8 @@ function mainHome(){
  quick('events','🎟️ مدیریت ایونت‌ها','محتوای رویدادها و وضعیت نمایش')+
  quick('faq','❓ سوالات متداول','مدیریت پرسش و پاسخ')+
  quick('pages','📄 صفحات','متن و محتوای صفحات اصلی')+
+ quick('contact','💬 ارتباط با ما','اطلاعات تماس، شبکه‌های اجتماعی و راه‌های ارتباطی')+
+ quick('hours','🕐 ساعات کاری','روزها و ساعت‌های کاری قابل نمایش به مشتری')+
  quick('settings','⚙️ تنظیمات','تنظیمات و محتوای عمومی Mini App')+
  '</div></div>';
 }
@@ -145,8 +174,79 @@ function renderBookingTab(key){
  const box=document.getElementById('bookingContent');
  if(key==='dashboard'){renderDashboard();return;}
  if(key==='closures'){renderClosuresPanel();return;}
- const map={content:'bookingContent',schedule:'schedule',settings:'bookingSettings',discount:'discount',customers:'customers',bookings:'bookings'};
- renderGenericCms(map[key]||key,'bookingContent');
+ if(key==='content'){renderBookingContent();return;}
+ if(key==='schedule'){renderSchedulePanel();return;}
+ if(key==='settings'){renderBookingSettings();return;}
+ if(key==='discount'){renderDiscountPanel();return;}
+ if(key==='customers'){renderReadOnlyPanel('customers','👥 مشتری‌ها','مشتری‌ها اطلاعاتی هستند و از اینجا نباید به‌صورت دستی حذف/تغییر داده شوند.');return;}
+ if(key==='bookings'){renderReadOnlyPanel('bookings','📋 رزروها','رزروها فقط برای مشاهده و جستجو هستند؛ تأیید پرداخت، تأیید نوبت، Hold و Release همچنان فقط توسط Backend انجام می‌شود.');return;}
+ renderGenericCms(key,'bookingContent');
+}
+
+function renderBookingContent(){
+ const box=document.getElementById('bookingContent');
+ const d=normalizeData(cmsData.bookingContent);
+ let html='<div class="card"><div class="crud-head"><div><h3>📝 محتوای رزرو</h3><div class="muted">مدیریت محتوای قابل نمایش رزرو؛ منطق پرداخت و رزرو در Backend باقی می‌ماند.</div></div><button class="btn" onclick="openCmsForm(\'bookingContent\')">＋ افزودن مورد</button></div>';
+ if(!d.headers.length){html+='<div class="empty">ساختار Booking Content از CMS دریافت نشده است.</div>';}
+ else if(!d.rows.length){html+='<div class="empty">هنوز محتوایی ثبت نشده است.</div>';}
+ else{html+=tableForKey('bookingContent',d,false);}
+ html+='</div><div class="card"><h3>📌 محتوای موردنیاز</h3><div class="quick-grid">'+
+ quickInfo('💫 خدمات رزرو','نام، دسته، زیر‌دسته، توضیحات، قیمت، تصویر، مدت، ترتیب و وضعیت فعال.')+
+ quickInfo('📖 راهنمای رزرو','متن راهنمای انتخاب خدمت، تاریخ و Slot.')+
+ quickInfo('💳 راهنمای پرداخت','متن مراحل پرداخت و ارسال رسید.')+
+ quickInfo('⚠️ هشدار رسید','رسید به‌تنهایی به معنی تأیید نهایی نوبت نیست.')+
+ '</div></div>';
+ box.innerHTML=html;
+}
+function quickInfo(title,desc){return '<div class="quick" style="cursor:default"><b>'+title+'</b><span>'+desc+'</span></div>'}
+function tableForKey(key,d,actions=true){
+ let html='<div class="table-wrap"><table class="table"><thead><tr>'+d.headers.map(h=>'<th>'+esc(h)+'</th>').join('')+(actions?'<th>عملیات</th>':'')+'</tr></thead><tbody>';
+ d.rows.forEach(row=>{
+   html+='<tr>'+d.headers.map(h=>'<td>'+cell(h,row[h])+'</td>').join('');
+   if(actions)html+='<td><div class="row-actions"><button class="btn alt" onclick="openCmsForm(\''+escJs(key)+'\','+row._row+')">ویرایش</button><button class="btn alt" onclick="toggleCms(\''+escJs(key)+'\','+row._row+')">تغییر وضعیت</button><button class="btn danger" onclick="deleteCms(\''+escJs(key)+'\','+row._row+')">حذف</button></div></td>';
+   html+='</tr>';
+ });
+ return html+'</tbody></table></div>';
+}
+
+function renderSchedulePanel(){
+ const d=normalizeData(cmsData.schedule);
+ let html='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">Slotها از CMS قابل مدیریت‌اند؛ Availability، قفل و Double Booking همچنان توسط Backend تعیین می‌شود.</div></div><button class="btn" onclick="openCmsForm(\'schedule\')">＋ افزودن زمان</button></div>';
+ html+='<div class="quick-grid">'+
+ quickInfo('شنبه تا چهارشنبه','صبح: 11:00 تا 13:30 · عصر: 16:00 تا 18:30')+
+ quickInfo('پنجشنبه','فقط بازه صبح: 11:00 تا 13:30')+
+ quickInfo('Backend','مرجع نهایی آزاد/رزرو بودن Slot و جلوگیری از Double Booking است.')+
+ '</div>';
+ if(d.rows.length) html+='<div style="margin-top:12px">'+tableForKey('schedule',d,true)+'</div>';
+ else html+='<div class="empty">هنوز Slotی در CMS ثبت نشده است.</div>';
+ html+='</div>';
+ document.getElementById('bookingContent').innerHTML=html;
+}
+
+function renderBookingSettings(){
+ const d=normalizeData(cmsData.bookingSettings);
+ let html='<div class="card"><div class="crud-head"><div><h3>⚙️ تنظیمات رزرو</h3><div class="muted">این بخش فقط تنظیمات قابل مدیریت را نگهداری می‌کند؛ اعمال منطق رزرو در Backend است.</div></div><button class="btn" onclick="openCmsForm(\'bookingSettings\')">＋ افزودن مورد</button></div>';
+ if(d.rows.length) html+=tableForKey('bookingSettings',d,true); else html+='<div class="empty">هنوز تنظیماتی ثبت نشده است.</div>';
+ html+='<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">موارد مورد انتظار: فعال بودن رزرو، حداقل/حداکثر فاصله رزرو، مدت Hold، مدت Hold بررسی پرداخت، نمایش Slotها و متن‌های عمومی رزرو.</div></div></div>';
+ document.getElementById('bookingContent').innerHTML=html;
+}
+
+function renderDiscountPanel(){
+ const d=normalizeData(cmsData.discount);
+ let html='<div class="card"><div class="crud-head"><div><h3>🎟️ تخفیف و VIP</h3><div class="muted">CMS فقط محتوای نمایش و تنظیمات قابل مدیریت را کنترل می‌کند؛ اعتبارسنجی و مصرف Token در Backend انجام می‌شود.</div></div><button class="btn" onclick="openCmsForm(\'discount\')">＋ افزودن مورد</button></div>';
+ if(d.rows.length) html+=tableForKey('discount',d,true); else html+='<div class="empty">هنوز موردی ثبت نشده است.</div>';
+ html+='<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">⚠️ این پنل نباید Token را مصرف کند، اعتبار Token را محاسبه کند یا تخفیف پرداخت را خودش اعمال کند.</div></div></div>';
+ document.getElementById('bookingContent').innerHTML=html;
+}
+
+function renderReadOnlyPanel(key,title,note){
+ const d=normalizeData(cmsData[key]);
+ let html='<div class="card"><div class="crud-head"><div><h3>'+title+'</h3><div class="muted">'+note+'</div></div><button class="btn alt" onclick="loadCms()">↻ به‌روزرسانی</button></div>';
+ if(!d.headers.length)html+='<div class="empty">ساختار این بخش از CMS دریافت نشده است.</div>';
+ else if(!d.rows.length)html+='<div class="empty">داده‌ای برای نمایش وجود ندارد.</div>';
+ else html+=tableForKey(key,d,false);
+ html+='</div>';
+ document.getElementById('bookingContent').innerHTML=html;
 }
 
 function renderDashboard(){
