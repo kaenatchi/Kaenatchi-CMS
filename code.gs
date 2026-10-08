@@ -46,7 +46,30 @@ function getAllData_(sheetName) {
     return obj;
   })};
 }
+function getOrCreateCmsSheet_(sheetName, headers) {
+  const ss = getSpreadsheet_();
+  let sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  } else if (sheet.getLastColumn() === 0) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+
+  return sheet;
+}
+
 function getCMSData() {
+  /*
+   * BookingSettings and Booking data live in the same authoritative
+   * spreadsheet used by Booking Backend. BookingContent is CMS-only
+   * presentation content, so it is provisioned here when missing.
+   */
+  const bookingContentSheet = getOrCreateCmsSheet_('BookingContent', [
+    'کلید', 'عنوان', 'بخش', 'محتوا', 'لینک تصویر', 'ترتیب', 'فعال'
+  ]);
+
   return {
     services:getAllData_(SHEETS.services),
     courses:getAllData_(SHEETS.courses),
@@ -55,10 +78,100 @@ function getCMSData() {
     pages:getAllData_(SHEETS.pages),
     settings:getAllData_(SHEETS.settings),
 
+    bookingContent:{
+      headers:getHeaders_(bookingContentSheet),
+      rows:getAllData_('BookingContent').rows
+    },
+    bookingSettings:getAllData_('BookingSettings'),
+
     bookings:getAllData_('Bookings'),
     customers:getAllData_('Customers'),
     payments:getAllData_('Payments')
   };
+}
+
+/*
+ * Schedule is backend-owned configuration. The CMS is allowed to edit the
+ * same authoritative Schedule sheet through this admin function; it never
+ * creates a second schedule source.
+ */
+function saveBookingSchedule(rows) {
+  if (!Array.isArray(rows)) throw new Error('ساختار زمان‌بندی نامعتبر است.');
+
+  const sheet = getSheet_('Schedule');
+  const headers = getHeaders_(sheet);
+  const required = ['Day','Active','Start Time','End Time','Slot Duration'];
+
+  required.forEach(function(h) {
+    if (headers.indexOf(h) === -1) {
+      throw new Error('ستون '+h+' در شیت Schedule پیدا نشد.');
+    }
+  });
+
+  const dayIndex = headers.indexOf('Day');
+  const activeIndex = headers.indexOf('Active');
+  const startIndex = headers.indexOf('Start Time');
+  const endIndex = headers.indexOf('End Time');
+  const durationIndex = headers.indexOf('Slot Duration');
+
+  const allowedDays = ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'];
+  const seen = {};
+
+  const normalized = rows.map(function(row, index) {
+    const day = String(row.day || '').trim();
+    const active = row.active === true || String(row.active).toLowerCase() === 'true' ||
+      ['بله','فعال','1','yes'].indexOf(String(row.active).toLowerCase()) >= 0;
+    const startTime = normalizeAdminTime_(row.startTime);
+    const endTime = normalizeAdminTime_(row.endTime);
+    const duration = Number(row.slotDuration || 30);
+
+    if (allowedDays.indexOf(day) === -1) {
+      throw new Error('روز ردیف '+(index+1)+' معتبر نیست.');
+    }
+    if (!startTime || !endTime || startTime >= endTime) {
+      throw new Error('بازه ساعت ردیف '+(index+1)+' معتبر نیست.');
+    }
+    if (![15,30,60].includes(duration)) {
+      throw new Error('مدت Slot در ردیف '+(index+1)+' باید 15، 30 یا 60 دقیقه باشد.');
+    }
+
+    const key = day+'|'+startTime+'|'+endTime;
+    if (seen[key]) {
+      throw new Error('بازه تکراری در زمان‌بندی وجود دارد: '+day+' '+startTime+' تا '+endTime);
+    }
+    seen[key] = true;
+
+    return {day:day, active:active, startTime:startTime, endTime:endTime, slotDuration:duration};
+  });
+
+  const values = normalized.map(function(row) {
+    const out = new Array(headers.length).fill('');
+    out[dayIndex] = row.day;
+    out[activeIndex] = row.active ? 'TRUE' : 'FALSE';
+    out[startIndex] = row.startTime;
+    out[endIndex] = row.endTime;
+    out[durationIndex] = row.slotDuration;
+    return out;
+  });
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.getRange(2, 1, lastRow - 1, headers.length).clearContent();
+  }
+  if (values.length) {
+    sheet.getRange(2, 1, values.length, headers.length).setValues(values);
+  }
+
+  return {ok:true, schedule:normalized};
+}
+
+function normalizeAdminTime_(value) {
+  const s = String(value == null ? '' : value).trim();
+  const m = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return '';
+  const h = Number(m[1]), min = Number(m[2]);
+  if (h < 0 || h > 23 || min < 0 || min > 59) return '';
+  return String(h).padStart(2,'0')+':'+String(min).padStart(2,'0');
 }
 
 /*
