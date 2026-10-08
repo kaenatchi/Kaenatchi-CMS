@@ -186,7 +186,7 @@ function renderBookingTab(key){
 function renderBookingContent(){
  const box=document.getElementById('bookingContent');
  const d=normalizeData(cmsData.bookingContent);
- let html='<div class="card"><div class="crud-head"><div><h3>📝 محتوای رزرو</h3><div class="muted">این بخش فقط محتوای توضیحی و نمایشی Mini App رزرو را مدیریت می‌کند؛ منطق رزرو و پرداخت در Backend است.</div></div><button class="btn" onclick="openCmsForm('bookingContent')">＋ افزودن مورد</button></div>';
+ let html='<div class="card"><div class="crud-head"><div><h3>📝 محتوای رزرو</h3><div class="muted">این بخش فقط محتوای توضیحی و نمایشی Mini App رزرو را مدیریت می‌کند؛ منطق رزرو و پرداخت در Backend است.</div></div><button class="btn" onclick="openCmsForm(\'bookingContent\')">＋ افزودن مورد</button></div>';
  if(!d.headers.length){html+='<div class="empty">ساختار Booking Content هنوز ساخته نشده است؛ با یک بار باز کردن این بخش، ساختار استاندارد CMS ساخته می‌شود.</div>';}
  else if(!d.rows.length){html+='<div class="empty">هنوز محتوایی ثبت نشده است. از «افزودن مورد» برای ساخت متن‌های راهنما استفاده کن.</div>';}
  else{html+=tableForKey('bookingContent',d,true);}
