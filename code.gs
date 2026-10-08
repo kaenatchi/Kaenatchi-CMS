@@ -53,7 +53,14 @@ function getCMSData() {
     events:getAllData_(SHEETS.events),
     faq:getAllData_(SHEETS.faq),
     pages:getAllData_(SHEETS.pages),
-    settings:getAllData_(SHEETS.settings)
+    settings:getAllData_(SHEETS.settings),
+
+    // Read-only Booking data for Central CMS dashboards.
+    // Booking creation, payment approval, slot holds/releases and
+    // double-booking protection remain exclusively in Booking Backend.
+    bookings:getAllData_('Bookings'),
+    customers:getAllData_('Customers'),
+    payments:getAllData_('Payments')
   };
 }
 function addItem(sheetName,data) {
