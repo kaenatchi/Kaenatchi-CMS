@@ -186,15 +186,15 @@ function renderBookingTab(key){
 function renderBookingContent(){
  const box=document.getElementById('bookingContent');
  const d=normalizeData(cmsData.bookingContent);
- let html='<div class="card"><div class="crud-head"><div><h3>📝 محتوای رزرو</h3><div class="muted">مدیریت محتوای قابل نمایش رزرو؛ منطق پرداخت و رزرو در Backend باقی می‌ماند.</div></div><button class="btn" onclick="openCmsForm(\'bookingContent\')">＋ افزودن مورد</button></div>';
- if(!d.headers.length){html+='<div class="empty">ساختار Booking Content از CMS دریافت نشده است.</div>';}
- else if(!d.rows.length){html+='<div class="empty">هنوز محتوایی ثبت نشده است.</div>';}
- else{html+=tableForKey('bookingContent',d,false);}
- html+='</div><div class="card"><h3>📌 محتوای موردنیاز</h3><div class="quick-grid">'+
- quickInfo('💫 خدمات رزرو','نام، دسته، زیر‌دسته، توضیحات، قیمت، تصویر، مدت، ترتیب و وضعیت فعال.')+
- quickInfo('📖 راهنمای رزرو','متن راهنمای انتخاب خدمت، تاریخ و Slot.')+
- quickInfo('💳 راهنمای پرداخت','متن مراحل پرداخت و ارسال رسید.')+
- quickInfo('⚠️ هشدار رسید','رسید به‌تنهایی به معنی تأیید نهایی نوبت نیست.')+
+ let html='<div class="card"><div class="crud-head"><div><h3>📝 محتوای رزرو</h3><div class="muted">این بخش فقط محتوای توضیحی و نمایشی Mini App رزرو را مدیریت می‌کند؛ منطق رزرو و پرداخت در Backend است.</div></div><button class="btn" onclick="openCmsForm('bookingContent')">＋ افزودن مورد</button></div>';
+ if(!d.headers.length){html+='<div class="empty">ساختار Booking Content هنوز ساخته نشده است؛ با یک بار باز کردن این بخش، ساختار استاندارد CMS ساخته می‌شود.</div>';}
+ else if(!d.rows.length){html+='<div class="empty">هنوز محتوایی ثبت نشده است. از «افزودن مورد» برای ساخت متن‌های راهنما استفاده کن.</div>';}
+ else{html+=tableForKey('bookingContent',d,true);}
+ html+='</div><div class="card"><h3>📌 بخش‌های پیشنهادی</h3><div class="quick-grid">'+
+ quickInfo('💫 معرفی رزرو','عنوان و توضیح بخش رزرو و انتخاب خدمت.')+
+ quickInfo('📖 راهنمای رزرو','راهنمای انتخاب خدمت، تاریخ و Slot.')+
+ quickInfo('💳 راهنمای پرداخت','مراحل پرداخت و ارسال رسید.')+
+ quickInfo('⚠️ هشدار رسید','توضیح اینکه ارسال رسید به معنی تأیید نهایی نیست.')+
  '</div></div>';
  box.innerHTML=html;
 }
@@ -252,20 +252,22 @@ async function renderSchedulePanel(){
 }
 function renderBookingSettings(){
  const d=normalizeData(cmsData.bookingSettings);
- let html='<div class="card"><div class="crud-head"><div><h3>⚙️ تنظیمات رزرو</h3><div class="muted">این بخش فقط تنظیمات قابل مدیریت را نگهداری می‌کند؛ اعمال منطق رزرو در Backend است.</div></div><button class="btn" onclick="openCmsForm(\'bookingSettings\')">＋ افزودن مورد</button></div>';
- if(d.rows.length) html+=tableForKey('bookingSettings',d,true); else html+='<div class="empty">هنوز تنظیماتی ثبت نشده است.</div>';
- html+='<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">موارد مورد انتظار: فعال بودن رزرو، حداقل/حداکثر فاصله رزرو، مدت Hold، مدت Hold بررسی پرداخت، نمایش Slotها و متن‌های عمومی رزرو.</div></div></div>';
+ let html='<div class="card"><div class="crud-head"><div><h3>⚙️ تنظیمات رزرو</h3><div class="muted">این‌ها تنظیمات واقعی Booking Backend هستند؛ تغییرشان مستقیماً روی رفتار سامانه رزرو اثر می‌گذارد.</div></div><button class="btn alt" onclick="loadCms()">↻ دریافت آخرین تنظیمات</button></div>';
+ if(d.headers.length && d.rows.length) html+=tableForKey('bookingSettings',d,true);
+ else html+='<div class="empty">تنظیمات Booking Backend در شیت BookingSettings پیدا نشد.</div>';
+ html+='<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">این بخش عمداً «افزودن مورد» ندارد؛ تنظیمات باید فقط در ردیف‌های موجود Backend ویرایش شوند تا کلید تنظیمات جدید و ناخواسته ساخته نشود.</div></div></div>';
  document.getElementById('bookingContent').innerHTML=html;
 }
-
 function renderDiscountPanel(){
- const d=normalizeData(cmsData.discount);
- let html='<div class="card"><div class="crud-head"><div><h3>🎟️ تخفیف و VIP</h3><div class="muted">CMS فقط محتوای نمایش و تنظیمات قابل مدیریت را کنترل می‌کند؛ اعتبارسنجی و مصرف Token در Backend انجام می‌شود.</div></div><button class="btn" onclick="openCmsForm(\'discount\')">＋ افزودن مورد</button></div>';
- if(d.rows.length) html+=tableForKey('discount',d,true); else html+='<div class="empty">هنوز موردی ثبت نشده است.</div>';
- html+='<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">⚠️ این پنل نباید Token را مصرف کند، اعتبار Token را محاسبه کند یا تخفیف پرداخت را خودش اعمال کند.</div></div></div>';
- document.getElementById('bookingContent').innerHTML=html;
+ document.getElementById('bookingContent').innerHTML=
+ '<div class="card"><div class="crud-head"><div><h3>🎟️ تخفیف و VIP</h3><div class="muted">اعتبارسنجی، درصد تخفیف، صدور/مصرف Token و وضعیت عضویت VIP در Backend/VIP Panel انجام می‌شود.</div></div></div>'+
+ '<div class="quick-grid">'+
+ quickInfo('🎟️ اعتبار کد','کد در زمان رزرو توسط Booking Backend اعتبارسنجی می‌شود.')+
+ quickInfo('💰 محاسبه مبلغ','درصد و مبلغ تخفیف از Token معتبر محاسبه می‌شود.')+
+ quickInfo('🔐 مصرف Token','مصرف Token فقط بعد از جریان تأیید واقعی انجام می‌شود.')+
+ '</div>'+
+ '<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">برای مدیریت خود Tokenها و مشتری‌های VIP از پنل مستقل VIP استفاده کن؛ این بخش عمداً دکمه «افزودن مورد» ندارد تا دو سیستم تخفیف مستقل ایجاد نشود.</div></div></div>';
 }
-
 function renderReadOnlyPanel(key,title,note){
  const d=normalizeData(cmsData[key]);
  let html='<div class="card"><div class="crud-head"><div><h3>'+title+'</h3><div class="muted">'+note+'</div></div><button class="btn alt" onclick="loadCms()">↻ به‌روزرسانی</button></div>';
