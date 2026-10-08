@@ -233,16 +233,25 @@ async function renderSchedulePanel(){
  }
 }
 function scheduleEditorRow(row,index){
- const day=String(row.day||'شنبه');
+ const day=String(row.day||'شنبه').trim();
  const active=String(row.active)==='false'?'false':'true';
  const duration=String(row.slotDuration||30);
+ const times=[];
+ for(let h=0;h<24;h++){
+   for(let m=0;m<60;m+=30) times.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+ }
+ function timeOptions(selected){
+   const value=String(selected||'').trim();
+   const all=value && times.indexOf(value)===-1 ? [value].concat(times) : times;
+   return all.map(function(t){return '<option value="'+t+'" '+(t===value?'selected':'')+'>'+t+'</option>';}).join('');
+ }
  return '<div class="schedule-row" data-index="'+index+'" style="display:grid;grid-template-columns:1.3fr .8fr .8fr .8fr auto;gap:8px;align-items:end;margin-bottom:9px">'+
    '<div class="field"><label>روز</label><select class="sch-day">'+
-   ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'].map(function(d){return '<option '+(d===day?'selected':'')+'>'+d+'</option>';}).join('')+
+   ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'].map(function(d){return '<option value="'+d+'" '+(d===day?'selected':'')+'>'+d+'</option>';}).join('')+
    '</select></div>'+
    '<div class="field"><label>فعال</label><select class="sch-active"><option value="true" '+(active==='true'?'selected':'')+'>فعال</option><option value="false" '+(active==='false'?'selected':'')+'>غیرفعال</option></select></div>'+
-   '<div class="field"><label>از</label><input class="sch-start" value="'+esc(row.startTime||'')+'" placeholder="11:00"></div>'+
-   '<div class="field"><label>تا</label><input class="sch-end" value="'+esc(row.endTime||'')+'" placeholder="13:30"></div>'+
+   '<div class="field"><label>از</label><select class="sch-start">'+timeOptions(row.startTime)+'</select></div>'+
+   '<div class="field"><label>تا</label><select class="sch-end">'+timeOptions(row.endTime)+'</select></div>'+
    '<div class="field"><label>مدت</label><select class="sch-duration">'+
    [15,30,60].map(function(d){return '<option value="'+d+'" '+(String(d)===duration?'selected':'')+'>'+d+'</option>';}).join('')+
    '</select></div>'+
