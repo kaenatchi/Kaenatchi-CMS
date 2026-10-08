@@ -63,33 +63,71 @@ function getCMSData() {
 
 /*
  * Booking Schedule is owned by the Booking Backend.
- * Central CMS reads it through the backend API and never creates,
- * edits or deletes Schedule rows locally.
+ * Central CMS reads it through the booking transport layer and never
+ * creates, edits or deletes Schedule rows locally.
  */
-function getBookingSchedule() {
-  var response = UrlFetchApp.fetch(
-    CENTRAL_BOOKING_WEB_APP_URL + '?action=getSchedule',
-    { muteHttpExceptions: true }
-  );
+var BOOKING_TRANSPORT_URL =
+  'https://kaenatchi-booking-transport.mayanaz-oriflame.workers.dev/';
 
+function parseBookingJsonResponse_(response, sourceName) {
+  var status = response.getResponseCode();
   var text = response.getContentText();
-  var data;
 
-  try {
-    data = JSON.parse(text);
-  } catch (error) {
-    throw new Error('پاسخ زمان‌بندی Backend قابل خواندن نیست.');
-  }
-
-  if (!data || data.ok !== true) {
+  if (status < 200 || status >= 300) {
     throw new Error(
-      data && data.message
-        ? data.message
-        : 'دریافت زمان‌بندی از Booking Backend ناموفق بود.'
+      'پاسخ ' + sourceName + ' با وضعیت HTTP ' + status + ' دریافت شد.'
     );
   }
 
-  return data;
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(
+      'پاسخ ' + sourceName + ' JSON معتبر نیست. ' +
+      'ابتدای پاسخ: ' + String(text || '').slice(0, 180)
+    );
+  }
+}
+
+function getBookingSchedule() {
+  var urls = [
+    CENTRAL_BOOKING_WEB_APP_URL + '?action=getSchedule',
+    BOOKING_TRANSPORT_URL + '?action=getSchedule'
+  ];
+
+  var lastError = null;
+
+  for (var i = 0; i < urls.length; i++) {
+    try {
+      var response = UrlFetchApp.fetch(urls[i], {
+        muteHttpExceptions: true,
+        followRedirects: true
+      });
+
+      var data = parseBookingJsonResponse_(
+        response,
+        i === 0 ? 'Booking Backend' : 'Booking Transport'
+      );
+
+      if (data && data.ok === true) {
+        return data;
+      }
+
+      lastError = new Error(
+        data && data.message
+          ? data.message
+          : 'دریافت زمان‌بندی از سامانه رزرو ناموفق بود.'
+      );
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw new Error(
+    lastError && lastError.message
+      ? lastError.message
+      : 'دریافت زمان‌بندی از سامانه رزرو ناموفق بود.'
+  );
 }
 function addItem(sheetName,data) {
   const sheet=getSheet_(sheetName),headers=getHeaders_(sheet);
