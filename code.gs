@@ -55,13 +55,41 @@ function getCMSData() {
     pages:getAllData_(SHEETS.pages),
     settings:getAllData_(SHEETS.settings),
 
-    // Read-only Booking data for Central CMS dashboards.
-    // Booking creation, payment approval, slot holds/releases and
-    // double-booking protection remain exclusively in Booking Backend.
     bookings:getAllData_('Bookings'),
     customers:getAllData_('Customers'),
     payments:getAllData_('Payments')
   };
+}
+
+/*
+ * Booking Schedule is owned by the Booking Backend.
+ * Central CMS reads it through the backend API and never creates,
+ * edits or deletes Schedule rows locally.
+ */
+function getBookingSchedule() {
+  var response = UrlFetchApp.fetch(
+    CENTRAL_BOOKING_WEB_APP_URL + '?action=getSchedule',
+    { muteHttpExceptions: true }
+  );
+
+  var text = response.getContentText();
+  var data;
+
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error('پاسخ زمان‌بندی Backend قابل خواندن نیست.');
+  }
+
+  if (!data || data.ok !== true) {
+    throw new Error(
+      data && data.message
+        ? data.message
+        : 'دریافت زمان‌بندی از Booking Backend ناموفق بود.'
+    );
+  }
+
+  return data;
 }
 function addItem(sheetName,data) {
   const sheet=getSheet_(sheetName),headers=getHeaders_(sheet);
