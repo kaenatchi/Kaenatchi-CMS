@@ -299,7 +299,7 @@ function renderReadOnlyPanel(key,title,note){
    if(!d.headers.length)html+='<div class="empty">ساختار این بخش از CMS دریافت نشده است.</div>';
    else if(!d.rows.length)html+='<div class="empty">داده‌ای برای نمایش وجود ندارد.</div>';
    else if(key==='bookings')html+=bookingListPanel(d);
-   else html+=tableForKey(key,sortCmsRows(key,d.rows),false);
+   else html+=tableForKey(key,{headers:d.headers,rows:sortCmsRows(key,d.rows)},false);
    html+='</div>';
    box.innerHTML=html;
  }catch(e){
