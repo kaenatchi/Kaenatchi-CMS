@@ -214,7 +214,7 @@ async function renderSchedulePanel(){
  box.innerHTML='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">این جدول مستقیماً Schedule اصلی Booking Backend را ویرایش می‌کند؛ منبع دومی برای Slot ساخته نمی‌شود.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ به‌روزرسانی</button></div><div class="loading">در حال دریافت…</div></div>';
  try{
    const result=await runServer('getBookingSchedule');
-   const rows=Array.isArray(result&&result.schedule)?result.schedule:[];
+   const rawRows=Array.isArray(result&&result.schedule)?result.schedule:[]; const rows=repairScheduleRowsForEditor_(rawRows);
    let html='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی واقعی رزرو</h3><div class="muted">هر تغییر اینجا مستقیماً روی تولید Slotهای Booking Backend اثر می‌گذارد.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻</button></div>';
    html+='<div class="quick-grid">'+
      quickInfo('شنبه تا چهارشنبه','صبح ۱۱:۰۰ تا ۱۳:۳۰ · عصر ۱۶:۰۰ تا ۱۸:۳۰')+
@@ -232,8 +232,38 @@ async function renderSchedulePanel(){
    box.innerHTML='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">دریافت زمان‌بندی انجام نشد.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ تلاش مجدد</button></div><div class="empty">'+esc(e.message||e)+'</div></div>';
  }
 }
+function normalizeScheduleDay_(value){
+ const s=String(value||'').trim().replace(/ي/g,'ی').replace(/ك/g,'ک');
+ const map={'شنبه':'شنبه','یکشنبه':'یکشنبه','يكشنبه':'یکشنبه','دوشنبه':'دوشنبه','سه‌شنبه':'سه‌شنبه','سه شنبه':'سه‌شنبه','سهشنبه':'سه‌شنبه','چهارشنبه':'چهارشنبه','پنجشنبه':'پنجشنبه','جمعه':'جمعه'};
+ return map[s]||s;
+}
+function canonicalWeeklySchedule_(){
+ return [
+  {day:'شنبه',active:true,startTime:'11:00',endTime:'13:30',slotDuration:30},
+  {day:'شنبه',active:true,startTime:'16:00',endTime:'18:30',slotDuration:30},
+  {day:'یکشنبه',active:true,startTime:'11:00',endTime:'13:30',slotDuration:30},
+  {day:'یکشنبه',active:true,startTime:'16:00',endTime:'18:30',slotDuration:30},
+  {day:'دوشنبه',active:true,startTime:'11:00',endTime:'13:30',slotDuration:30},
+  {day:'دوشنبه',active:true,startTime:'16:00',endTime:'18:30',slotDuration:30},
+  {day:'سه‌شنبه',active:true,startTime:'11:00',endTime:'13:30',slotDuration:30},
+  {day:'سه‌شنبه',active:true,startTime:'16:00',endTime:'18:30',slotDuration:30},
+  {day:'چهارشنبه',active:true,startTime:'11:00',endTime:'13:30',slotDuration:30},
+  {day:'چهارشنبه',active:true,startTime:'16:00',endTime:'18:30',slotDuration:30},
+  {day:'پنجشنبه',active:true,startTime:'11:00',endTime:'13:30',slotDuration:30},
+  {day:'جمعه',active:false,startTime:'11:00',endTime:'13:30',slotDuration:30}
+];
+}
+function repairScheduleRowsForEditor_(rows){
+ const normalized=(Array.isArray(rows)?rows:[]).map(function(r){
+   return Object.assign({},r,{day:normalizeScheduleDay_(r.day)});
+ });
+ if(normalized.length===12 && normalized.every(function(r){return r.day==='شنبه';})){
+   return canonicalWeeklySchedule_();
+ }
+ return normalized;
+}
 function scheduleEditorRow(row,index){
- const day=String(row.day||'شنبه').trim();
+ const day=normalizeScheduleDay_(row.day||'شنبه');
  const active=String(row.active)==='false'?'false':'true';
  const duration=String(row.slotDuration||30);
  const times=[];
@@ -325,14 +355,11 @@ function sortCmsRows(key,source){
 function cmsDateScore(v){
  const s=String(v==null?'':v).trim();
  if(!s)return 0;
- const normalized=s
-   .replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
-   .replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+ const normalized=digits(s).replace(/-/g,'/');
+ const j=normalized.match(/^(13|14)(\\d{2})[\\/](\\d{1,2})[\\/](\\d{1,2})/);
+ if(j)return Number(j[1]+j[2])*1000000+Number(j[3])*10000+Number(j[4])*100;
  const d=new Date(normalized);
- if(!isNaN(d.getTime()))return d.getTime();
- const m=normalized.match(/(13|14|20)\d{2}[\/-](\d{1,2})[\/-](\d{1,2})/);
- if(m)return Number(m[1])*100000000+Number(m[2])*1000000+Number(m[3])*10000;
- return 0;
+ return isNaN(d.getTime())?0:d.getTime();
 }
 function bookingListPanel(d){
  const rows=sortCmsRows('bookings',d.rows);
@@ -441,17 +468,30 @@ function renderGenericCms(key,targetId){
 }
 function normalizeData(data){if(!data)return{headers:[],rows:[]};if(Array.isArray(data))return{headers:data.length?Object.keys(data[0]).filter(k=>k!=='_row'):[],rows:data};return{headers:data.headers||[],rows:data.rows||[]}}
 function formatCmsCell(h,v){
- const s=String(v==null?'':v);
+ const s=String(v==null?'':v).trim();
  if(!s)return '';
- if(/last booking|created at|approved at|updated at|تاریخ.*(رزرو|ایجاد|تأیید|تایید)|زمان.*(رزرو|ایجاد|تأیید|تایید)/i.test(String(h))){
-   const d=new Date(s);
-   if(!isNaN(d.getTime())){
-     const date=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
-     const time=/\d{1,2}:\d{2}/.test(s)?' '+new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false}).format(d):'';
-     return date+time;
-   }
+ const header=String(h||'');
+ const isDateHeader=/(date|time|at|created|updated|approved|booking|joined|expires|expiry|last booking|تاریخ|زمان|ایجاد|ویرایش|تأیید|تایید|رزرو|عضویت|انقضا|آخرین رزرو)/i.test(header);
+ if(!isDateHeader)return s;
+ return formatAnyDateJalali_(s);
+}
+function formatAnyDateJalali_(value){
+ const s=String(value==null?'':value).trim();
+ if(!s)return '';
+ const normalized=digits(s).replace(/\\/g,'/');
+ const jalali=normalized.match(/^(13|14)\\d{2}[\\/-]\\d{1,2}[\\/-]\\d{1,2}(?:[ T]+(\\d{1,2}):([0-5]\\d)(?::([0-5]\\d))?)?/);
+ if(jalali){
+   const parts=normalized.split(/[ T]+/);
+   const date=parts[0].replace(/-/g,'/');
+   const tm=jalali[2] ? ' '+String(jalali[2]).padStart(2,'0')+':'+jalali[3]+(jalali[4]?':'+jalali[4]:'') : '';
+   return date+tm;
  }
- return s;
+ const d=new Date(normalized);
+ if(isNaN(d.getTime()))return s;
+ const date=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+ const hasTime=/\\d{1,2}:\\d{2}/.test(normalized);
+ const time=hasTime?' '+new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(d):'';
+ return date+time;
 }
 function cell(h,v){const val=formatCmsCell(h,v);if(h==='فعال'||/active/i.test(h)){const a=['بله','فعال','true','1','yes'].includes(String(val).trim().toLowerCase());return '<span class="badge '+(a?'':'off')+'">'+(a?'فعال':'غیرفعال')+'</span>'}return '<span title="'+esc(val)+'">'+esc(String(val).length>90?String(val).slice(0,90)+'…':val)+'</span>'}
 function openCmsForm(key,rowNumber){
@@ -480,7 +520,7 @@ function isActive(v){return ['بله','فعال','true','1','yes'].includes(Stri
 function isConfirmed(r){const a=String(r['Appointment Status']??r['وضعیت نوبت']??r.appointmentStatus??'').toLowerCase();const p=String(r['Payment Status']??r['وضعیت پرداخت']??r.paymentStatus??'').toLowerCase();return ['confirmed','تأییدشده','تاییدشده','تایید شده'].includes(a)&&['approved','تأییدشده','تاییدشده','تایید شده'].includes(p)}
 function isPendingReview(r){const p=String(r['Payment Status']??r['وضعیت پرداخت']??r.paymentStatus??'').toLowerCase();const a=String(r['Appointment Status']??r['وضعیت نوبت']??r.appointmentStatus??'').toLowerCase();return ['received','دریافت شد','دریافت‌شده'].includes(p)&&!['confirmed','تأییدشده','تاییدشده','تایید شده'].includes(a)}
 function isReceived(r){const p=String(r['Payment Status']??r['وضعیت پرداخت']??r.paymentStatus??'').toLowerCase();return ['received','approved','دریافت شد','دریافت‌شده','تأییدشده','تاییدشده'].includes(p)}
-function sameToday(r){const candidates=[r['تاریخ'],r['تاریخ رزرو'],r['تاریخ نوبت'],r.date,r.jalaliDate,r['Date']];const today=digits(new Date().toLocaleDateString('fa-IR-u-ca-persian')).replace(/-/g,'/');return candidates.some(v=>digits(String(v||'')).replace(/-/g,'/').includes(today))}
+function sameToday(r){const candidates=[r['تاریخ'],r['تاریخ رزرو'],r['تاریخ نوبت'],r.date,r.jalaliDate,r['Date'],r['Appointment Date']];const today=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Tehran'}).format(new Date()).replace(/-/g,'/');return candidates.some(v=>digits(String(v||'')).replace(/-/g,'/').includes(today))}
 function uniqueCustomers(rs){const set=new Set(rs.map(r=>String(r['Customer ID']??r['Telegram ID']??r['موبایل']??r.mobile??r['نام']+'|'+r['نام خانوادگی']).trim()).filter(Boolean));return set.size}
 function jalaliTodayText(){try{return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{weekday:'long',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}catch(e){return 'امروز'}}
 function renderBookingError(e){document.getElementById('bookingContent').innerHTML='<div class="card"><b>خطا در دریافت داده‌های Booking</b><div class="muted">'+esc(e.message||e)+'</div></div>'}
