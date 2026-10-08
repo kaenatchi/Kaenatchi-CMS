@@ -209,20 +209,47 @@ function tableForKey(key,d,actions=true){
  return html+'</tbody></table></div>';
 }
 
-function renderSchedulePanel(){
- const d=normalizeData(cmsData.schedule);
- let html='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">Slotها از CMS قابل مدیریت‌اند؛ Availability، قفل و Double Booking همچنان توسط Backend تعیین می‌شود.</div></div><button class="btn" onclick="openCmsForm(\'schedule\')">＋ افزودن زمان</button></div>';
- html+='<div class="quick-grid">'+
- quickInfo('شنبه تا چهارشنبه','صبح: 11:00 تا 13:30 · عصر: 16:00 تا 18:30')+
- quickInfo('پنجشنبه','فقط بازه صبح: 11:00 تا 13:30')+
- quickInfo('Backend','مرجع نهایی آزاد/رزرو بودن Slot و جلوگیری از Double Booking است.')+
- '</div>';
- if(d.rows.length) html+='<div style="margin-top:12px">'+tableForKey('schedule',d,true)+'</div>';
- else html+='<div class="empty">هنوز Slotی در CMS ثبت نشده است.</div>';
- html+='</div>';
- document.getElementById('bookingContent').innerHTML=html;
-}
+async function renderSchedulePanel(){
+ const box=document.getElementById('bookingContent');
 
+ box.innerHTML='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">زمان‌بندی واقعی مستقیماً از Booking Backend خوانده می‌شود. CMS مالک Schedule نیست و فقط آن را نمایش می‌دهد.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ به‌روزرسانی</button></div><div class="empty">در حال دریافت زمان‌بندی از سامانه رزرو…</div></div>';
+
+ try{
+   const result=await runServer('getBookingSchedule');
+   const rows=Array.isArray(result && result.schedule) ? result.schedule : [];
+
+   let html='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">منبع: Booking Backend · این بخش فقط خواندنی است.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ به‌روزرسانی</button></div>';
+
+   html+='<div class="quick-grid">'+
+     quickInfo('شنبه تا چهارشنبه','زمان‌های واقعی Backend در جدول زیر نمایش داده می‌شوند.')+
+     quickInfo('پنجشنبه','زمان‌های واقعی Backend در جدول زیر نمایش داده می‌شوند.')+
+     quickInfo('Backend','مرجع نهایی Slot، Availability، Hold و Double Booking است.')+
+   '</div>';
+
+   if(!rows.length){
+     html+='<div class="empty" style="margin-top:12px">Booking Backend هیچ ردیف فعالی در Schedule برنگرداند.</div>';
+   }else{
+     html+='<div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>روز</th><th>وضعیت</th><th>شروع</th><th>پایان</th><th>مدت Slot</th></tr></thead><tbody>';
+     rows.forEach(function(row){
+       html+='<tr>'+
+         '<td>'+esc(row.day||'')+'</td>'+
+         '<td>'+((row.active===true||String(row.active).toLowerCase()==='true')?'فعال':'غیرفعال')+'</td>'+
+         '<td>'+esc(row.startTime||'')+'</td>'+
+         '<td>'+esc(row.endTime||'')+'</td>'+
+         '<td>'+esc(String(row.slotDuration||30))+' دقیقه</td>'+
+       '</tr>';
+     });
+     html+='</tbody></table></div>';
+   }
+
+   html+='<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">ℹ️ برای تغییر ساعت کاری، Schedule در Booking Backend باید تغییر کند؛ این پنل عمداً دکمه افزودن/ویرایش/حذف Slot ندارد تا دو منبع مستقل برای زمان‌بندی ایجاد نشود.</div></div>';
+   html+='</div>';
+
+   box.innerHTML=html;
+ }catch(e){
+   box.innerHTML='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">دریافت زمان‌بندی از Booking Backend انجام نشد.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ تلاش مجدد</button></div><div class="empty">'+esc(e.message||e)+'</div></div>';
+ }
+}
 function renderBookingSettings(){
  const d=normalizeData(cmsData.bookingSettings);
  let html='<div class="card"><div class="crud-head"><div><h3>⚙️ تنظیمات رزرو</h3><div class="muted">این بخش فقط تنظیمات قابل مدیریت را نگهداری می‌کند؛ اعمال منطق رزرو در Backend است.</div></div><button class="btn" onclick="openCmsForm(\'bookingSettings\')">＋ افزودن مورد</button></div>';
