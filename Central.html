@@ -233,15 +233,21 @@ async function renderSchedulePanel(){
  }
 }
 function scheduleEditorRow(row,index){
+ const day=String(row.day||'شنبه');
+ const active=String(row.active)==='false'?'false':'true';
+ const duration=String(row.slotDuration||30);
  return '<div class="schedule-row" data-index="'+index+'" style="display:grid;grid-template-columns:1.3fr .8fr .8fr .8fr auto;gap:8px;align-items:end;margin-bottom:9px">'+
-   '<div class="field"><label>روز</label><select class="sch-day"><option>شنبه</option><option>یکشنبه</option><option>دوشنبه</option><option>سه‌شنبه</option><option>چهارشنبه</option><option>پنجشنبه</option><option>جمعه</option></select></div>'+
-   '<div class="field"><label>فعال</label><select class="sch-active"><option value="true">فعال</option><option value="false">غیرفعال</option></select></div>'+
+   '<div class="field"><label>روز</label><select class="sch-day">'+
+   ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'].map(function(d){return '<option '+(d===day?'selected':'')+'>'+d+'</option>';}).join('')+
+   '</select></div>'+
+   '<div class="field"><label>فعال</label><select class="sch-active"><option value="true" '+(active==='true'?'selected':'')+'>فعال</option><option value="false" '+(active==='false'?'selected':'')+'>غیرفعال</option></select></div>'+
    '<div class="field"><label>از</label><input class="sch-start" value="'+esc(row.startTime||'')+'" placeholder="11:00"></div>'+
    '<div class="field"><label>تا</label><input class="sch-end" value="'+esc(row.endTime||'')+'" placeholder="13:30"></div>'+
-   '<div class="field"><label>مدت</label><select class="sch-duration"><option value="15">15</option><option value="30">30</option><option value="60">60</option></select></div>'+
+   '<div class="field"><label>مدت</label><select class="sch-duration">'+
+   [15,30,60].map(function(d){return '<option value="'+d+'" '+(String(d)===duration?'selected':'')+'>'+d+'</option>';}).join('')+
+   '</select></div>'+
    '<button class="btn danger" type="button" onclick="this.closest(\'.schedule-row\').remove()">حذف</button>'+
-   '</div>'+
-   '<script>(function(){var r=document.currentScript.previousElementSibling; r.querySelector(".sch-day").value='+JSON.stringify(row.day||'')+'; r.querySelector(".sch-active").value='+JSON.stringify(String(row.active)!=="false"?"true":"false")+'; r.querySelector(".sch-duration").value='+JSON.stringify(String(row.slotDuration||30))+';})();</script>';
+   '</div>';
 }
 function addScheduleRow(){
  const box=document.getElementById('scheduleRows'); if(!box)return;
@@ -425,7 +431,7 @@ function formatCmsCell(h,v){
  }
  return s;
 }
-function cell(h,v){const val=String(v==null?'':v);if(h==='فعال'||/active/i.test(h)){const a=['بله','فعال','true','1','yes'].includes(val.trim().toLowerCase());return '<span class="badge '+(a?'':'off')+'">'+(a?'فعال':'غیرفعال')+'</span>'}return '<span title="'+esc(val)+'">'+esc(val.length>90?val.slice(0,90)+'…':val)+'</span>'}
+function cell(h,v){const val=formatCmsCell(h,v);if(h==='فعال'||/active/i.test(h)){const a=['بله','فعال','true','1','yes'].includes(String(val).trim().toLowerCase());return '<span class="badge '+(a?'':'off')+'">'+(a?'فعال':'غیرفعال')+'</span>'}return '<span title="'+esc(val)+'">'+esc(String(val).length>90?String(val).slice(0,90)+'…':val)+'</span>'}
 function openCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),row=rowNumber?data.rows.find(r=>Number(r._row)===Number(rowNumber)):{};
  document.getElementById('cmsModalTitle').textContent=(rowNumber?'✏️ ویرایش':'＋ افزودن')+' · '+keyLabel(key);
