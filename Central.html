@@ -211,44 +211,61 @@ function tableForKey(key,d,actions=true){
 
 async function renderSchedulePanel(){
  const box=document.getElementById('bookingContent');
-
- box.innerHTML='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">زمان‌بندی واقعی مستقیماً از Booking Backend خوانده می‌شود. CMS مالک Schedule نیست و فقط آن را نمایش می‌دهد.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ به‌روزرسانی</button></div><div class="empty">در حال دریافت زمان‌بندی از سامانه رزرو…</div></div>';
-
+ box.innerHTML='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">این جدول مستقیماً Schedule اصلی Booking Backend را ویرایش می‌کند؛ منبع دومی برای Slot ساخته نمی‌شود.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ به‌روزرسانی</button></div><div class="loading">در حال دریافت…</div></div>';
  try{
    const result=await runServer('getBookingSchedule');
-   const rows=Array.isArray(result && result.schedule) ? result.schedule : [];
-
-   let html='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">منبع: Booking Backend · این بخش فقط خواندنی است.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ به‌روزرسانی</button></div>';
-
+   const rows=Array.isArray(result&&result.schedule)?result.schedule:[];
+   let html='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی واقعی رزرو</h3><div class="muted">هر تغییر اینجا مستقیماً روی تولید Slotهای Booking Backend اثر می‌گذارد.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻</button></div>';
    html+='<div class="quick-grid">'+
-     quickInfo('شنبه تا چهارشنبه','زمان‌های واقعی Backend در جدول زیر نمایش داده می‌شوند.')+
-     quickInfo('پنجشنبه','زمان‌های واقعی Backend در جدول زیر نمایش داده می‌شوند.')+
-     quickInfo('Backend','مرجع نهایی Slot، Availability، Hold و Double Booking است.')+
+     quickInfo('شنبه تا چهارشنبه','صبح ۱۱:۰۰ تا ۱۳:۳۰ · عصر ۱۶:۰۰ تا ۱۸:۳۰')+
+     quickInfo('پنجشنبه','صبح ۱۱:۰۰ تا ۱۳:۳۰ · عصر تعطیل')+
+     quickInfo('جمعه','بسته')+
    '</div>';
-
-   if(!rows.length){
-     html+='<div class="empty" style="margin-top:12px">Booking Backend هیچ ردیف فعالی در Schedule برنگرداند.</div>';
-   }else{
-     html+='<div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>روز</th><th>وضعیت</th><th>شروع</th><th>پایان</th><th>مدت Slot</th></tr></thead><tbody>';
-     rows.forEach(function(row){
-       html+='<tr>'+
-         '<td>'+esc(row.day||'')+'</td>'+
-         '<td>'+((row.active===true||String(row.active).toLowerCase()==='true')?'فعال':'غیرفعال')+'</td>'+
-         '<td>'+esc(row.startTime||'')+'</td>'+
-         '<td>'+esc(row.endTime||'')+'</td>'+
-         '<td>'+esc(String(row.slotDuration||30))+' دقیقه</td>'+
-       '</tr>';
-     });
-     html+='</tbody></table></div>';
-   }
-
-   html+='<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">ℹ️ برای تغییر ساعت کاری، Schedule در Booking Backend باید تغییر کند؛ این پنل عمداً دکمه افزودن/ویرایش/حذف Slot ندارد تا دو منبع مستقل برای زمان‌بندی ایجاد نشود.</div></div>';
+   html+='<div id="scheduleRows" style="margin-top:12px">';
+   rows.forEach(function(row,i){html+=scheduleEditorRow(row,i);});
    html+='</div>';
-
+   html+='<div class="actions"><button class="btn" onclick="addScheduleRow()">＋ افزودن بازه</button><button class="btn gold" onclick="saveSchedulePanel()">ذخیره زمان‌بندی</button></div>';
+   html+='<div id="scheduleStatus" class="status"></div></div>';
+   html+='<div class="card"><div class="help-note">⚠️ تغییر زمان‌بندی روی تاریخ‌ها و Slotهای قابل رزرو اثر دارد. قبل از ذخیره، بازه‌های تکراری و ساعت‌های نادرست را کنترل می‌کنیم.</div></div>';
    box.innerHTML=html;
  }catch(e){
-   box.innerHTML='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">دریافت زمان‌بندی از Booking Backend انجام نشد.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ تلاش مجدد</button></div><div class="empty">'+esc(e.message||e)+'</div></div>';
+   box.innerHTML='<div class="card"><div class="crud-head"><div><h3>🗓 زمان‌بندی</h3><div class="muted">دریافت زمان‌بندی انجام نشد.</div></div><button class="btn alt" onclick="renderSchedulePanel()">↻ تلاش مجدد</button></div><div class="empty">'+esc(e.message||e)+'</div></div>';
  }
+}
+function scheduleEditorRow(row,index){
+ return '<div class="schedule-row" data-index="'+index+'" style="display:grid;grid-template-columns:1.3fr .8fr .8fr .8fr auto;gap:8px;align-items:end;margin-bottom:9px">'+
+   '<div class="field"><label>روز</label><select class="sch-day"><option>شنبه</option><option>یکشنبه</option><option>دوشنبه</option><option>سه‌شنبه</option><option>چهارشنبه</option><option>پنجشنبه</option><option>جمعه</option></select></div>'+
+   '<div class="field"><label>فعال</label><select class="sch-active"><option value="true">فعال</option><option value="false">غیرفعال</option></select></div>'+
+   '<div class="field"><label>از</label><input class="sch-start" value="'+esc(row.startTime||'')+'" placeholder="11:00"></div>'+
+   '<div class="field"><label>تا</label><input class="sch-end" value="'+esc(row.endTime||'')+'" placeholder="13:30"></div>'+
+   '<div class="field"><label>مدت</label><select class="sch-duration"><option value="15">15</option><option value="30">30</option><option value="60">60</option></select></div>'+
+   '<button class="btn danger" type="button" onclick="this.closest(\'.schedule-row\').remove()">حذف</button>'+
+   '</div>'+
+   '<script>(function(){var r=document.currentScript.previousElementSibling; r.querySelector(".sch-day").value='+JSON.stringify(row.day||'')+'; r.querySelector(".sch-active").value='+JSON.stringify(String(row.active)!=="false"?"true":"false")+'; r.querySelector(".sch-duration").value='+JSON.stringify(String(row.slotDuration||30))+';})();</script>';
+}
+function addScheduleRow(){
+ const box=document.getElementById('scheduleRows'); if(!box)return;
+ const i=box.querySelectorAll('.schedule-row').length;
+ const temp=document.createElement('div'); temp.innerHTML=scheduleEditorRow({day:'شنبه',active:true,startTime:'11:00',endTime:'13:30',slotDuration:30},i);
+ while(temp.firstChild) box.appendChild(temp.firstChild);
+}
+async function saveSchedulePanel(){
+ const status=document.getElementById('scheduleStatus');
+ const rows=[...document.querySelectorAll('#scheduleRows .schedule-row')].map(function(row){
+   return {
+     day:row.querySelector('.sch-day').value,
+     active:row.querySelector('.sch-active').value==='true',
+     startTime:row.querySelector('.sch-start').value.trim(),
+     endTime:row.querySelector('.sch-end').value.trim(),
+     slotDuration:Number(row.querySelector('.sch-duration').value)
+   };
+ });
+ status.textContent='در حال ذخیره…';
+ try{
+   const result=await runServer('saveBookingSchedule',[rows]);
+   status.textContent='زمان‌بندی با موفقیت ذخیره شد ✓';
+   if(result&&result.schedule) setTimeout(renderSchedulePanel,450);
+ }catch(e){status.textContent='خطا: '+(e.message||e);}
 }
 function renderBookingSettings(){
  const d=normalizeData(cmsData.bookingSettings);
@@ -273,11 +290,55 @@ function renderReadOnlyPanel(key,title,note){
  let html='<div class="card"><div class="crud-head"><div><h3>'+title+'</h3><div class="muted">'+note+'</div></div><button class="btn alt" onclick="loadCms()">↻ به‌روزرسانی</button></div>';
  if(!d.headers.length)html+='<div class="empty">ساختار این بخش از CMS دریافت نشده است.</div>';
  else if(!d.rows.length)html+='<div class="empty">داده‌ای برای نمایش وجود ندارد.</div>';
- else html+=tableForKey(key,d,false);
+ else if(key==='bookings')html+=bookingListPanel(d);
+ else html+=tableForKey(key,sortCmsRows(key,d.rows),false);
  html+='</div>';
  document.getElementById('bookingContent').innerHTML=html;
 }
-
+function sortCmsRows(key,source){
+ const a=[...source];
+ if(key==='customers'){
+   return a.sort((x,y)=>cmsDateScore(y['Last Booking At']??y['آخرین رزرو']??y['Created At']??y['تاریخ ایجاد'])-cmsDateScore(x['Last Booking At']??x['آخرین رزرو']??x['Created At']??x['تاریخ ایجاد']));
+ }
+ return a.sort((x,y)=>cmsDateScore(y['Created At']??y['createdAt']??y['تاریخ ایجاد']??y['Created At'])-cmsDateScore(x['Created At']??x['createdAt']??x['تاریخ ایجاد']??x['Created At']));
+}
+function cmsDateScore(v){
+ const s=String(v||'').trim(); if(!s)return 0;
+ const d=new Date(s); return isNaN(d.getTime())?0:d.getTime();
+}
+function bookingListPanel(d){
+ const rows=sortCmsRows('bookings',d.rows);
+ let html='<div class="subtabs" id="bookingStatusTabs">'+
+   '<button class="subtab active" onclick="filterBookingRows(\'all\',this)">همه</button>'+
+   '<button class="subtab" onclick="filterBookingRows(\'pending\',this)">⏳ در انتظار بررسی</button>'+
+   '<button class="subtab" onclick="filterBookingRows(\'confirmed\',this)">✅ تأیید شده</button>'+
+   '<button class="subtab" onclick="filterBookingRows(\'cancelled\',this)">❌ لغو شده</button>'+
+   '<button class="subtab" onclick="filterBookingRows(\'rejected\',this)">رد شده</button>'+
+   '</div><div id="bookingListTable">'+bookingTableHtml(rows,d)+'</div>';
+ return html;
+}
+function bookingTableHtml(rows,d){
+ let html='<div class="table-wrap"><table class="table"><thead><tr>'+d.headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>';
+ rows.forEach(function(row){html+='<tr>'+d.headers.map(h=>'<td>'+cell(h,formatCmsCell(h,row[h]))+'</td>').join('')+'</tr>';});
+ return html+'</tbody></table></div>';
+}
+function filterBookingRows(status,btn){
+ document.querySelectorAll('#bookingStatusTabs .subtab').forEach(x=>x.classList.remove('active')); if(btn)btn.classList.add('active');
+ const d=normalizeData(cmsData.bookings);
+ const rows=sortCmsRows('bookings',d.rows).filter(function(r){
+   if(status==='all')return true;
+   const s=bookingStatus(r);
+   return s===status;
+ });
+ document.getElementById('bookingListTable').innerHTML=bookingTableHtml(rows,d);
+}
+function bookingStatus(r){
+ const s=String(r['Appointment Status']??r['وضعیت نوبت']??r.appointmentStatus??'').trim().toLowerCase();
+ if(s.includes('لغو')||s.includes('cancel'))return 'cancelled';
+ if(s.includes('رد')||s.includes('reject'))return 'rejected';
+ if(s.includes('تأیید')||s.includes('تایید')||s.includes('confirm'))return 'confirmed';
+ return 'pending';
+}
 function renderDashboard(){
  const today=jalaliTodayText();
  const bookings=rows('bookings'), payments=rows('payments');
@@ -351,6 +412,19 @@ function renderGenericCms(key,targetId){
  html+='</tbody></table></div>';box.innerHTML=html;
 }
 function normalizeData(data){if(!data)return{headers:[],rows:[]};if(Array.isArray(data))return{headers:data.length?Object.keys(data[0]).filter(k=>k!=='_row'):[],rows:data};return{headers:data.headers||[],rows:data.rows||[]}}
+function formatCmsCell(h,v){
+ const s=String(v==null?'':v);
+ if(!s)return '';
+ if(/last booking|created at|approved at|updated at|تاریخ.*(رزرو|ایجاد|تأیید|تایید)|زمان.*(رزرو|ایجاد|تأیید|تایید)/i.test(String(h))){
+   const d=new Date(s);
+   if(!isNaN(d.getTime())){
+     const date=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+     const time=/\d{1,2}:\d{2}/.test(s)?' '+new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false}).format(d):'';
+     return date+time;
+   }
+ }
+ return s;
+}
 function cell(h,v){const val=String(v==null?'':v);if(h==='فعال'||/active/i.test(h)){const a=['بله','فعال','true','1','yes'].includes(val.trim().toLowerCase());return '<span class="badge '+(a?'':'off')+'">'+(a?'فعال':'غیرفعال')+'</span>'}return '<span title="'+esc(val)+'">'+esc(val.length>90?val.slice(0,90)+'…':val)+'</span>'}
 function openCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),row=rowNumber?data.rows.find(r=>Number(r._row)===Number(rowNumber)):{};
