@@ -257,8 +257,13 @@ function repairScheduleRowsForEditor_(rows){
  const normalized=(Array.isArray(rows)?rows:[]).map(function(r){
    return Object.assign({},r,{day:normalizeScheduleDay_(r.day)});
  });
- if(normalized.length===12 && normalized.every(function(r){return r.day==='شنبه';})){
-   return canonicalWeeklySchedule_();
+ if(normalized.length && normalized.every(function(r){return r.day==='شنبه';})){
+   if(normalized.length===12) return canonicalWeeklySchedule_();
+   if(normalized.length===7){
+     return normalized.map(function(r,i){
+       return Object.assign({},r,{day:['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'][i]});
+     });
+   }
  }
  return normalized;
 }
