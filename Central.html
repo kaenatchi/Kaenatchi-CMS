@@ -314,7 +314,7 @@ function sortCmsRows(key,source){
  return a.sort((x,y)=>cmsDateScore(y['Created At']??y['createdAt']??y['تاریخ ایجاد']??y['Created At'])-cmsDateScore(x['Created At']??x['createdAt']??x['تاریخ ایجاد']??x['Created At']));
 }
 function cmsDateScore(v){
- const s=String(v==null?'':'').trim();
+ const s=String(v==null?'':v).trim();
  if(!s)return 0;
  const normalized=s
    .replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
