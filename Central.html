@@ -483,19 +483,47 @@ function formatCmsCell(h,v){
 function formatAnyDateJalali_(value){
  const s=String(value==null?'':value).trim();
  if(!s)return '';
+
+ // Persian/Arabic digits -> Latin digits first.
  const normalized=digits(s).replace(/\\/g,'/');
- const jalali=normalized.match(/^(13|14)\\d{2}[\\/-]\\d{1,2}[\\/-]\\d{1,2}(?:[ T]+(\\d{1,2}):([0-5]\\d)(?::([0-5]\\d))?)?/);
+
+ // IMPORTANT: A 4-digit 13xx/14xx date is already Jalali.
+ // Never pass it through JavaScript Date, because JS interprets it
+ // as a Gregorian date and produces years such as 784 or 163.
+ const jalali=normalized.match(/^(13|14)\\d{2}[\\/-](\\d{1,2})[\\/-](\\d{1,2})(?:[ T]+(\\d{1,2}):([0-5]\\d)(?::([0-5]\\d))?)?$/);
  if(jalali){
-   const parts=normalized.split(/[ T]+/);
-   const date=parts[0].replace(/-/g,'/');
-   const tm=jalali[2] ? ' '+String(jalali[2]).padStart(2,'0')+':'+jalali[3]+(jalali[4]?':'+jalali[4]:'') : '';
-   return date+tm;
+   const date=jalali[1]+jalali[0].slice(2,4)+'/'+String(jalali[2]).padStart(2,'0')+'/'+String(jalali[3]).padStart(2,'0');
+   const time=jalali[4] ? ' '+String(jalali[4]).padStart(2,'0')+':'+jalali[5]+(jalali[6]?':'+jalali[6]:'') : '';
+   return date+time;
  }
- const d=new Date(normalized);
- if(isNaN(d.getTime()))return s;
- const date=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+
+ // ISO/Gregorian dates are the only values we convert.
+ // Do NOT guess that arbitrary M/D/Y values are Gregorian unless
+ // the year is clearly Gregorian (19xx/20xx).
+ const iso=normalized.match(/^(19|20)\\d{2}-\\d{1,2}-\\d{1,2}(?:[ T].*)?$/);
+ const slashGregorian=normalized.match(/^(\\d{1,2})[\\/-](\\d{1,2})[\\/-]((?:19|20)\\d{2})(?:[ T].*)?$/);
+
+ let d=null;
+ if(iso || slashGregorian){
+   d=new Date(normalized);
+   if(isNaN(d.getTime()) && slashGregorian){
+     d=new Date(Number(slashGregorian[3]),Number(slashGregorian[1])-1,Number(slashGregorian[2]));
+   }
+ }
+ if(!d || isNaN(d.getTime()))return s;
+
+ const date=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{
+   year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Tehran'
+ }).format(d);
+
  const hasTime=/\\d{1,2}:\\d{2}/.test(normalized);
- const time=hasTime?' '+new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(d):'';
+ const time=hasTime
+   ? ' '+new Intl.DateTimeFormat('fa-IR',{
+       hour:'2-digit',minute:'2-digit',second:'2-digit',
+       hour12:false,timeZone:'Asia/Tehran'
+     }).format(d)
+   : '';
+
  return date+time;
 }
 function cell(h,v){const val=formatCmsCell(h,v);if(h==='فعال'||/active/i.test(h)){const a=['بله','فعال','true','1','yes'].includes(String(val).trim().toLowerCase());return '<span class="badge '+(a?'':'off')+'">'+(a?'فعال':'غیرفعال')+'</span>'}return '<span title="'+esc(val)+'">'+esc(String(val).length>90?String(val).slice(0,90)+'…':val)+'</span>'}
