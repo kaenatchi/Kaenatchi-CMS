@@ -544,6 +544,26 @@ function formatCmsCell(h,v){
  }
  return s;
 }
+function formatAnyDateJalali_(value){
+ const raw=String(value==null?'':value).trim();
+ if(!raw)return '';
+ const normalized=digits(raw).replace(/\\/g,'/').replace(/-/g,'/');
+ const jalaliMatch=normalized.match(/^(13|14)\\d{2}\\/(\\d{1,2})\\/(\\d{1,2})(.*)$/);
+ if(jalaliMatch){
+  const pad=n=>String(n).padStart(2,'0');
+  return jalaliMatch[1]+jalaliMatch[0].slice(2,4)+'/'+pad(jalaliMatch[2])+'/'+pad(jalaliMatch[3])+jalaliMatch[4];
+ }
+ let m=raw.match(/^(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})(.*)$/);
+ if(!m)m=raw.match(/^(\\d{1,2})[-/](\\d{1,2})[-/](\\d{4})(.*)$/)&&[raw,raw.match(/^(\\d{1,2})[-/](\\d{1,2})[-/](\\d{4})(.*)$/)[3],raw.match(/^(\\d{1,2})[-/](\\d{1,2})[-/](\\d{4})(.*)$/)[1],raw.match(/^(\\d{1,2})[-/](\\d{1,2})[-/](\\d{4})(.*)$/)[2],raw.match(/^(\\d{1,2})[-/](\\d{1,2})[-/](\\d{4})(.*)$/)[4]];
+ if(!m)return raw;
+ const year=Number(m[1]),month=Number(m[2]),day=Number(m[3]);
+ if(year<1900||year>2200||month<1||month>12||day<1||day>31)return raw;
+ const date=new Date(Date.UTC(year,month-1,day,12));
+ if(!Number.isFinite(date.getTime()))return raw;
+ const formatted=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Tehran'}).format(date).replace(/-/g,'/');
+ return formatted+(m[4]||'');
+}
+function formatAnyDateJalali(value){return formatAnyDateJalali_(value);}
 function cell(h,v){const val=formatCmsCell(h,v);if(h==='فعال'||/active/i.test(h)){const a=['بله','فعال','true','1','yes'].includes(String(val).trim().toLowerCase());return '<span class="badge '+(a?'':'off')+'">'+(a?'فعال':'غیرفعال')+'</span>'}return '<span title="'+esc(val)+'">'+esc(String(val).length>90?String(val).slice(0,90)+'…':val)+'</span>'}
 function openCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),row=rowNumber?data.rows.find(r=>Number(r._row)===Number(rowNumber)):{};
