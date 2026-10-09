@@ -692,7 +692,7 @@ async function saveCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),payload={};data.headers.forEach((h,i)=>{const el=document.getElementById('cmsField_'+i);payload[h]=el?el.value:''});
  const status=document.getElementById('cmsFormStatus');
  if(key==='dailyContent'){
-  data.headers.forEach((h,i)=>{if(h==='تاریخ شروع'||h==='تاریخ پایان')syncDailyDateField(i);});
+  data.headers.forEach((h,i)=>{if(h==='تاریخ شروع'||h==='تاریخ پایان'){syncDailyDateField(i);const el=document.getElementById('cmsField_'+i);payload[h]=el?el.value:'';}});
   const start=String(payload['تاریخ شروع']||''),end=String(payload['تاریخ پایان']||'');
   if(!String(payload['عنوان']||'').trim()){status.textContent='لطفاً عنوان را وارد کن.';return;}
   if(!String(payload['متن']||'').trim()){status.textContent='لطفاً متن محتوا را وارد کن.';return;}
