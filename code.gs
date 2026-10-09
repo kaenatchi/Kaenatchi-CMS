@@ -390,7 +390,8 @@ function uploadDailyContentImage(dataUrl, fileName, mimeType) {
 // Adds a curated starter library once, without duplicating rows on repeat runs.
 // Images are optional; the Mini App keeps its branded visual fallback when none is attached.
 function seedDailyContentStarterPack() {
-  const sheet = getSheet_('dailyContent');
+  // Ensure the placement field exists even when the Apps Script deployment is upgraded before getCMSData runs.
+  const sheet = ensureCmsHeaders_(getSheet_('dailyContent'), ['محل نمایش']);
   const headers = getHeaders_(sheet);
   const existingIds = new Set(getAllData_('dailyContent').rows.map(function(row) {
     return String(row['شناسه'] || '').trim();
