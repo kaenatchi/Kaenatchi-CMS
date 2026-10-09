@@ -63,6 +63,17 @@ function getOrCreateCmsSheet_(sheetName, headers) {
   return sheet;
 }
 
+function ensureCmsHeaders_(sheet, requiredHeaders) {
+  const existing = getHeaders_(sheet);
+  const missing = requiredHeaders.filter(function(header) {
+    return existing.indexOf(header) < 0;
+  });
+  if (missing.length) {
+    sheet.getRange(1, existing.length + 1, 1, missing.length).setValues([missing]);
+  }
+  return sheet;
+}
+
 function getCMSData() {
   /*
    * BookingSettings and Booking data live in the same authoritative
@@ -72,9 +83,12 @@ function getCMSData() {
   const bookingContentSheet = getOrCreateCmsSheet_('BookingContent', [
     'کلید', 'عنوان', 'بخش', 'محتوا', 'لینک تصویر', 'ترتیب', 'فعال'
   ]);
-  const dailyContentSheet = getOrCreateCmsSheet_('DailyContent', [
-    'شناسه', 'عنوان', 'متن', 'لینک تصویر', 'دسته', 'فعال', 'تاریخ شروع', 'تاریخ پایان', 'ترتیب'
-  ]);
+  const dailyContentSheet = ensureCmsHeaders_(
+    getOrCreateCmsSheet_('DailyContent', [
+      'شناسه', 'عنوان', 'متن', 'لینک تصویر', 'دسته', 'فعال', 'تاریخ شروع', 'تاریخ پایان', 'ترتیب'
+    ]),
+    ['محل نمایش']
+  );
 
   const settingsSheet=getSpreadsheet_().getSheetByName('BookingSettings')||getSpreadsheet_().getSheetByName('BookingSetings');
   return {
