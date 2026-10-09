@@ -422,7 +422,8 @@ function cmsDateScore(v){
  const slash=normalized.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
  if(slash){
   const a=Number(slash[1]),b=Number(slash[2]),y=Number(slash[3]);
-  const month=a>12?b:a,day=a>12?a:b;
+  // CMS dates use the user's DD/MM/YYYY convention when both parts are <= 12.
+  const day=a>12?a:(b>12?b:a),month=a>12?b:(b>12?a:b);
   return Date.UTC(y,month-1,day);
  }
  const d=new Date(s);
@@ -566,7 +567,7 @@ function formatAnyDateJalali_(value){
   if(!m)return raw;
   const a=Number(m[1]),b=Number(m[2]);year=Number(m[3]);suffix=m[4]||'';
   // If one component is >12, use it to disambiguate day/month.
-  if(a>12){day=a;month=b;}else if(b>12){month=a;day=b;}else{month=a;day=b;}
+  if(a>12){day=a;month=b;}else if(b>12){month=a;day=b;}else{day=a;month=b;}
  }
  if(year>=1300&&year<=1499&&month>=1&&month<=12&&day>=1&&day<=31){
   return persianDigits_(String(year)+'/'+String(month).padStart(2,'0')+'/'+String(day).padStart(2,'0')+suffix);
