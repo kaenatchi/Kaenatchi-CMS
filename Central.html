@@ -79,6 +79,8 @@ button,input,select,textarea{font-family:inherit}.app{max-width:1120px;margin:au
 
 <script>
 let cmsData={services:[],courses:[],events:[],faq:[],pages:[],settings:[],home:[],bookings:[],customers:[],payments:[],schedule:[],blockedDates:[],blockedSlots:[],bookingSettings:[],bookingContent:[],discount:[]};
+let currentMainTab='home';
+let currentBookingTab='dashboard';
 
 function showPanel(id,btn){
  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
@@ -102,8 +104,10 @@ async function loadCms(){
  try{
    const data=await runServer('getCMSData');
    cmsData=Object.assign(cmsData,data||{});
-   renderMainTab('home');
-   renderBookingTab('dashboard');
+   document.querySelectorAll('#mainTabs .subtab').forEach(x=>x.classList.toggle('active',x.getAttribute('onclick')&&x.getAttribute('onclick').includes("'"+currentMainTab+"'")));
+   document.querySelectorAll('#bookingTabs .subtab').forEach(x=>x.classList.toggle('active',x.getAttribute('onclick')&&x.getAttribute('onclick').includes("'"+currentBookingTab+"'")));
+   renderMainTab(currentMainTab);
+   renderBookingTab(currentBookingTab);
  }catch(e){
    document.getElementById('mainContent').innerHTML='<div class="card"><b>خطا در دریافت داده‌های CMS</b><div class="muted">'+esc(e.message||e)+'</div></div>';
    renderBookingError(e);
@@ -111,6 +115,7 @@ async function loadCms(){
 }
 
 function showMainTab(key,btn){
+ currentMainTab=key;
  if(btn){document.querySelectorAll('#mainTabs .subtab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');}
  renderMainTab(key);
 }
@@ -169,6 +174,7 @@ function jumpMain(key){
 }
 
 function showBookingTab(key,btn){
+ currentBookingTab=key;
  if(btn){document.querySelectorAll('#bookingTabs .subtab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');}
  renderBookingTab(key);
 }
