@@ -569,15 +569,16 @@ function formatAnyDateJalali_(value){
   if(a>12){day=a;month=b;}else if(b>12){month=a;day=b;}else{month=a;day=b;}
  }
  if(year>=1300&&year<=1499&&month>=1&&month<=12&&day>=1&&day<=31){
-  return String(year)+'/'+String(month).padStart(2,'0')+'/'+String(day).padStart(2,'0')+suffix;
+  return persianDigits_(String(year)+'/'+String(month).padStart(2,'0')+'/'+String(day).padStart(2,'0')+suffix);
  }
  if(year<1900||year>2200||month<1||month>12||day<1||day>31)return raw;
  const date=new Date(Date.UTC(year,month-1,day,12));
  if(!Number.isFinite(date.getTime()))return raw;
  const parts=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'UTC'}).formatToParts(date);
  const get=t=>parts.find(p=>p.type===t)?.value||'';
- return get('year')+'/'+get('month')+'/'+get('day')+suffix;
+ return persianDigits_(get('year')+'/'+get('month')+'/'+get('day')+suffix);
 }
+function persianDigits_(value){return String(value==null?'':value).replace(/[0-9]/g,d=>'۰۱۲۳۴۵۶۷۸۹'[Number(d)]);}
 function formatAnyDateJalali(value){return formatAnyDateJalali_(value);}
 function cell(h,v){const val=formatCmsCell(h,v);if(h==='فعال'||/active/i.test(h)){const a=['بله','فعال','true','1','yes'].includes(String(val).trim().toLowerCase());return '<span class="badge '+(a?'':'off')+'">'+(a?'فعال':'غیرفعال')+'</span>'}return '<span title="'+esc(val)+'">'+esc(String(val).length>90?String(val).slice(0,90)+'…':val)+'</span>'}
 function openCmsForm(key,rowNumber){
