@@ -25,7 +25,7 @@ function doGet(e) {
 
 function getSpreadsheet_() { return SpreadsheetApp.openById(SPREADSHEET_ID); }
 function resolveSheetName_(sheetName) {
-  const aliases={services:'Services',courses:'Courses',events:'Events',faq:'FAQ',pages:'Pages',settings:'Settings',bookingContent:'BookingContent',bookingSettings:'BookingSettings',bookingLogs:'BookingLogs',blockedDates:'BlockedDates',blockedSlots:'BlockedSlots',bookings:'Bookings',customers:'Customers',payments:'Payments',schedule:'Schedule'};
+  const aliases={services:'Services',courses:'Courses',events:'Events',faq:'FAQ',pages:'Pages',settings:'Settings',dailyContent:'DailyContent',bookingContent:'BookingContent',bookingSettings:'BookingSettings',bookingLogs:'BookingLogs',blockedDates:'BlockedDates',blockedSlots:'BlockedSlots',bookings:'Bookings',customers:'Customers',payments:'Payments',schedule:'Schedule'};
   const requested=String(sheetName||''),ss=getSpreadsheet_(),candidates=[aliases[requested]||requested];
   if(requested==='bookingSettings'||requested==='BookingSettings')candidates.push('BookingSetings');
   for(var i=0;i<candidates.length;i++){var found=ss.getSheetByName(candidates[i]);if(found)return found;}
@@ -72,11 +72,15 @@ function getCMSData() {
   const bookingContentSheet = getOrCreateCmsSheet_('BookingContent', [
     'کلید', 'عنوان', 'بخش', 'محتوا', 'لینک تصویر', 'ترتیب', 'فعال'
   ]);
+  const dailyContentSheet = getOrCreateCmsSheet_('DailyContent', [
+    'شناسه', 'عنوان', 'متن', 'لینک تصویر', 'دسته', 'فعال', 'تاریخ شروع', 'تاریخ پایان', 'ترتیب'
+  ]);
 
   const settingsSheet=getSpreadsheet_().getSheetByName('BookingSettings')||getSpreadsheet_().getSheetByName('BookingSetings');
   return {
     services:getAllData_(SHEETS.services),courses:getAllData_(SHEETS.courses),events:getAllData_(SHEETS.events),
     faq:getAllData_(SHEETS.faq),pages:getAllData_(SHEETS.pages),settings:getAllData_(SHEETS.settings),
+    dailyContent:{headers:getHeaders_(dailyContentSheet),rows:getAllData_('DailyContent').rows},
     bookingContent:{headers:getHeaders_(bookingContentSheet),rows:getAllData_('BookingContent').rows},
     bookingSettings:settingsSheet?getAllData_(settingsSheet.getName()):{headers:[],rows:[]},
     bookings:getAllData_('Bookings'),customers:getAllData_('Customers'),payments:getAllData_('Payments'),
@@ -269,7 +273,7 @@ function getDashboardStats() {
 }
 function getMiniAppData() {
   const data=getCMSData();
-  return {success:true,services:getActiveRows_(data.services.rows),courses:getActiveRows_(data.courses.rows),events:getActiveRows_(data.events.rows),faq:getActiveRows_(data.faq.rows),pages:getActiveRows_(data.pages.rows),settings:data.settings.rows,bookingContent:getActiveRows_(data.bookingContent.rows).sort(function(a,b){return (Number(a['ترتیب'])||0)-(Number(b['ترتیب'])||0);})};
+  return {success:true,services:getActiveRows_(data.services.rows),courses:getActiveRows_(data.courses.rows),events:getActiveRows_(data.events.rows),faq:getActiveRows_(data.faq.rows),pages:getActiveRows_(data.pages.rows),settings:data.settings.rows,dailyContent:getActiveRows_(data.dailyContent.rows),bookingContent:getActiveRows_(data.bookingContent.rows).sort(function(a,b){return (Number(a['ترتیب'])||0)-(Number(b['ترتیب'])||0);})};
 }
 function getActiveRows_(rows) {
   return rows.filter(function(row){
@@ -346,4 +350,22 @@ function callBookingAdmin_(payload) {
   }
 
   return data;
+}
+
+
+function uploadDailyContentImage(dataUrl, fileName, mimeType) {
+  if (!dataUrl || typeof dataUrl !== 'string' || dataUrl.indexOf('base64,') < 0) throw new Error('تصویر معتبر نیست.');
+  var match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) throw new Error('فرمت تصویر پشتیبانی نمی‌شود.');
+  var type = String(mimeType || match[1]).toLowerCase();
+  if (!/^image\/(jpeg|png|webp|gif)$/.test(type)) throw new Error('فرمت مجاز: JPG، PNG، WebP یا GIF.');
+  var bytes = Utilities.base64Decode(match[2]);
+  if (bytes.length > 5 * 1024 * 1024) throw new Error('حجم تصویر باید کمتر از ۵ مگابایت باشد.');
+  var safeName = String(fileName || 'kaenatchi-image').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+  var props = PropertiesService.getScriptProperties(), folderId = props.getProperty('KAENATCHI_DAILY_CONTENT_FOLDER_ID'), folder;
+  if (folderId) { try { folder = DriveApp.getFolderById(folderId); } catch (e) { folder = null; } }
+  if (!folder) { folder = DriveApp.createFolder('KaenatChi CMS Daily Content'); props.setProperty('KAENATCHI_DAILY_CONTENT_FOLDER_ID', folder.getId()); }
+  var file = folder.createFile(Utilities.newBlob(bytes, type, safeName));
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return {success:true, url:'https://drive.google.com/uc?export=view&id=' + file.getId(), fileId:file.getId(), name:file.getName()};
 }
