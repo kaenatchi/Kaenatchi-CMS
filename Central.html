@@ -333,8 +333,52 @@ function renderBookingSettings(){
  if(d.headers.length && d.rows.length) html+=tableForKey('bookingSettings',d,true);
  else html+='<div class="empty">تنظیمات Booking Backend در شیت BookingSettings پیدا نشد.</div>';
  html+='<div class="card" style="margin-top:12px;margin-bottom:0"><div class="help-note">این بخش عمداً «افزودن مورد» ندارد؛ تنظیمات باید فقط در ردیف‌های موجود Backend ویرایش شوند تا کلید تنظیمات جدید و ناخواسته ساخته نشود.</div></div></div>';
+ html+=renderPaymentCardSettings();
  document.getElementById('bookingContent').innerHTML=html;
 }
+function paymentSettingRow(aliases){
+ const d=normalizeData(cmsData.settings);
+ const kh=d.headers.find(h=>/کلید|key|نام|name/i.test(String(h)))||d.headers[0];
+ const vh=d.headers.find(h=>/مقدار|value|متن|text|لینک|url/i.test(String(h)))||d.headers[1];
+ const row=d.rows.find(r=>{const k=String(r[kh]||'').trim().toLowerCase();return aliases.some(a=>k===a.toLowerCase()||k.includes(a.toLowerCase()));});
+ return {d,kh,vh,row};
+}
+function paymentSettingValue(aliases){const x=paymentSettingRow(aliases);return x.row?String(x.row[x.vh]||''):'';}
+function renderPaymentCardSettings(){
+ const number=paymentSettingValue(['booking_card_number','شماره کارت','کارت بانکی']);
+ const bank=paymentSettingValue(['booking_bank_name','نام بانک']);
+ const holder=paymentSettingValue(['booking_card_holder','صاحب کارت','نام صاحب کارت']);
+ const note=paymentSettingValue(['booking_payment_text','توضیح پرداخت','متن پرداخت']);
+ return '<div class="card"><div class="crud-head"><div><h3>💳 اطلاعات کارت پرداخت</h3><div class="muted">اطلاعات این فرم در بخش پرداخت Mini App رزرو نمایش داده می‌شود و هر زمان قابل تغییر است.</div></div></div>'+
+ '<div class="help-note">برای کنار گذاشتن کارت فعلی، اطلاعات را خالی کن و ذخیره بزن. وقتی کارت جدید داشتی، شماره و مشخصات جدید را وارد کن. خالی بودن شماره کارت باعث می‌شود شماره‌ای در فرم رزرو نمایش داده نشود.</div>'+
+ '<div class="form-grid"><div class="field full"><label>شماره کارت</label><input id="paymentCardNumberField" inputmode="numeric" autocomplete="off" dir="ltr" value="'+esc(number)+'" placeholder="شماره کارت"></div>'+
+ '<div class="field"><label>نام بانک</label><input id="paymentBankField" value="'+esc(bank)+'" placeholder="نام بانک"></div>'+
+ '<div class="field"><label>نام صاحب کارت</label><input id="paymentHolderField" value="'+esc(holder)+'" placeholder="نام صاحب کارت"></div>'+
+ '<div class="field full"><label>توضیح پرداخت برای مشتری</label><textarea id="paymentNoteField">'+esc(note)+'</textarea></div></div>'+
+ '<div class="actions"><button class="btn" onclick="savePaymentCardSettings()">ذخیره اطلاعات کارت</button><button class="btn danger" onclick="clearPaymentCardSettings()">پاک‌کردن اطلاعات کارت فعلی</button></div><div id="paymentCardStatus" class="status"></div></div>';
+}
+async function savePaymentCardSettings(clearValues){
+ const status=document.getElementById('paymentCardStatus');if(!status)return;status.textContent='در حال ذخیره…';
+ const fields=[
+ {key:'booking_card_number',aliases:['booking_card_number','شماره کارت','کارت بانکی'],value:clearValues?'':document.getElementById('paymentCardNumberField').value.trim()},
+ {key:'booking_bank_name',aliases:['booking_bank_name','نام بانک'],value:clearValues?'':document.getElementById('paymentBankField').value.trim()},
+ {key:'booking_card_holder',aliases:['booking_card_holder','صاحب کارت','نام صاحب کارت'],value:clearValues?'':document.getElementById('paymentHolderField').value.trim()},
+ {key:'booking_payment_text',aliases:['booking_payment_text','توضیح پرداخت','متن پرداخت'],value:clearValues?'':document.getElementById('paymentNoteField').value.trim()}
+ ];
+ try{
+ const d=normalizeData(cmsData.settings);if(!d.headers.length)throw new Error('ستون‌های Settings دریافت نشدند.');
+ const kh=d.headers.find(h=>/کلید|key|نام|name/i.test(String(h)))||d.headers[0];
+ const vh=d.headers.find(h=>/مقدار|value|متن|text|لینک|url/i.test(String(h)))||d.headers[1];
+ if(!vh)throw new Error('ستون مقدار پیدا نشد.');
+ for(const f of fields){
+  const row=d.rows.find(r=>{const k=String(r[kh]||'').trim().toLowerCase();return f.aliases.some(a=>k===a.toLowerCase()||k.includes(a.toLowerCase()));});
+  if(row){const p={};d.headers.forEach(h=>p[h]=row[h]===undefined?'':row[h]);p[vh]=f.value;await runServer('updateItem',['settings',Number(row._row),p]);}
+  else{const p={};d.headers.forEach(h=>p[h]='');p[kh]=f.key;p[vh]=f.value;const ah=d.headers.find(h=>h==='فعال');if(ah)p[ah]='بله';await runServer('addItem',['settings',p]);}
+ }
+ status.textContent=clearValues?'اطلاعات کارت پاک شد ✓':'اطلاعات کارت ذخیره شد ✓';await loadCms();
+ }catch(e){status.textContent='خطا در ذخیره: '+(e.message||e);}
+}
+function clearPaymentCardSettings(){if(!confirm('اطلاعات کارت فعلی پاک شود؟'))return;savePaymentCardSettings(true);}
 function renderDiscountPanel(){
  document.getElementById('bookingContent').innerHTML=
  '<div class="card"><div class="crud-head"><div><h3>🎟️ تخفیف و VIP</h3><div class="muted">اعتبارسنجی، درصد تخفیف، صدور/مصرف Token و وضعیت عضویت VIP در Backend/VIP Panel انجام می‌شود.</div></div></div>'+
