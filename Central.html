@@ -602,7 +602,7 @@ function openCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),row=rowNumber?data.rows.find(r=>Number(r._row)===Number(rowNumber)):{};
  document.getElementById('cmsModalTitle').textContent=(rowNumber?'✏️ ویرایش':'＋ افزودن')+' · '+keyLabel(key);
  const nextOrder=String(data.rows.reduce((max,r)=>Math.max(max,Number(r['ترتیب'])||0),0)+1);
- let html='<div class="help-note">'+(key==='dailyContent'?'شناسه و ترتیب به‌صورت خودکار پیشنهاد می‌شوند. تاریخ‌ها را با انتخاب سال، ماه و روز شمسی تعیین کن؛ خالی گذاشتن هر دو تاریخ یعنی بدون محدودیت زمانی.':'این فرم برای مدیریت CMS است؛ Sheet پشت صحنه ذخیره‌سازی است و منطق Booking/Payment/VIP را اجرا نمی‌کند.')+'</div><div class="form-grid">';
+ let html='<div class="help-note">'+(key==='dailyContent'?'شناسه و ترتیب خودکار است. محل نمایش را انتخاب کن: حال‌وهوای امروز، پیشنهاد امروز، منتخب یا همه بخش‌ها. برای مناسبت‌ها تاریخ شمسی تعیین کن؛ بدون تاریخ، محتوا در چرخش عمومی می‌ماند.':'این فرم برای مدیریت CMS است؛ Sheet پشت صحنه ذخیره‌سازی است و منطق Booking/Payment/VIP را اجرا نمی‌کند.')+'</div><div class="form-grid">';
  data.headers.forEach((h,i)=>{
   let value=row&&row[h]!=null?row[h]:'';
   const id='cmsField_'+i,long=/توضیح|شرح|متن|محتوا|جواب|پاسخ|description|content|text|answer|body/i.test(String(h));
@@ -614,6 +614,10 @@ function openCmsForm(key,rowNumber){
    const categories=['عمومی','آموزشی','انگیزشی','تأمل','یادآوری','معرفی خدمات','مناسبت‌ها'];
    const opts=[...new Set([String(value||''),...categories].filter(Boolean))];
    control='<select id="'+id+'"><option value="">انتخاب دسته…</option>'+opts.map(o=>'<option value="'+esc(o)+'" '+(String(value)===o?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+  }else if(key==='dailyContent'&&h==='محل نمایش'){
+   const places=['حال‌وهوای امروز','پیشنهاد امروز','منتخب','همه بخش‌ها','مناسبت‌ها'];
+   const opts=[...new Set([String(value||''),...places].filter(Boolean))];
+   control='<select id="'+id+'"><option value="">انتخاب محل نمایش…</option>'+opts.map(o=>'<option value="'+esc(o)+'" '+(String(value)===o?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select><div class="muted">برای محتوای قدیمیِ بدون انتخاب، رفتار «حال‌وهوای امروز» حفظ می‌شود.</div>';
   }else if(key==='dailyContent'&&h==='ترتیب'){
    if(!value)value=nextOrder;
    control='<input id="'+id+'" type="number" min="1" step="1" value="'+esc(value)+'" placeholder="'+nextOrder+'"><div class="muted">پیش‌فرض: '+esc(nextOrder)+'</div>';
