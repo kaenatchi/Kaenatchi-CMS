@@ -414,10 +414,18 @@ function sortCmsRows(key,source){
 function cmsDateScore(v){
  const s=String(v==null?'':v).trim();
  if(!s)return 0;
- const normalized=digits(s).replace(/-/g,'/');
- const j=normalized.match(/^(13|14)(\\d{2})[\\/](\\d{1,2})[\\/](\\d{1,2})/);
+ const normalized=digits(s);
+ const j=normalized.match(/^(13|14)(\d{2})[\/-](\d{1,2})[\/-](\d{1,2})/);
  if(j)return Number(j[1]+j[2])*1000000+Number(j[3])*10000+Number(j[4])*100;
- const d=new Date(normalized);
+ const iso=normalized.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+ if(iso)return Date.UTC(Number(iso[1]),Number(iso[2])-1,Number(iso[3]));
+ const slash=normalized.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+ if(slash){
+  const a=Number(slash[1]),b=Number(slash[2]),y=Number(slash[3]);
+  const month=a>12?b:a,day=a>12?a:b;
+  return Date.UTC(y,month-1,day);
+ }
+ const d=new Date(s);
  return isNaN(d.getTime())?0:d.getTime();
 }
 function bookingListPanel(d){
@@ -547,22 +555,28 @@ function formatCmsCell(h,v){
 function formatAnyDateJalali_(value){
  const raw=String(value==null?'':value).trim();
  if(!raw)return '';
- const normalized=digits(raw).replace(/\\\\/g,'/').replace(/-/g,'/');
- const datePart=normalized.split(/[ T]/)[0];
- const parts=datePart.split('/');
- if(parts.length!==3)return raw;
- let year,month,day;
- if(parts[0].length===4){year=Number(parts[0]);month=Number(parts[1]);day=Number(parts[2]);}
- else if(parts[2].length===4){year=Number(parts[2]);month=Number(parts[0]);day=Number(parts[1]);}
- else return raw;
+ const s=digits(raw);
+ // Match the date at the beginning, including ISO timestamps.
+ let m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(.*)$/);
+ let year,month,day,suffix='';
+ if(m){
+  year=Number(m[1]);month=Number(m[2]);day=Number(m[3]);suffix=m[4]||'';
+ }else{
+  m=s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(.*)$/);
+  if(!m)return raw;
+  const a=Number(m[1]),b=Number(m[2]);year=Number(m[3]);suffix=m[4]||'';
+  // If one component is >12, use it to disambiguate day/month.
+  if(a>12){day=a;month=b;}else if(b>12){month=a;day=b;}else{month=a;day=b;}
+ }
  if(year>=1300&&year<=1499&&month>=1&&month<=12&&day>=1&&day<=31){
-  return String(year)+'/'+String(month).padStart(2,'0')+'/'+String(day).padStart(2,'0')+raw.slice(datePart.length);
+  return String(year)+'/'+String(month).padStart(2,'0')+'/'+String(day).padStart(2,'0')+suffix;
  }
  if(year<1900||year>2200||month<1||month>12||day<1||day>31)return raw;
  const date=new Date(Date.UTC(year,month-1,day,12));
  if(!Number.isFinite(date.getTime()))return raw;
- const formatted=new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Tehran'}).format(date).replace(/-/g,'/');
- return formatted+raw.slice(datePart.length);
+ const parts=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'UTC'}).formatToParts(date);
+ const get=t=>parts.find(p=>p.type===t)?.value||'';
+ return get('year')+'/'+get('month')+'/'+get('day')+suffix;
 }
 function formatAnyDateJalali(value){return formatAnyDateJalali_(value);}
 function cell(h,v){const val=formatCmsCell(h,v);if(h==='فعال'||/active/i.test(h)){const a=['بله','فعال','true','1','yes'].includes(String(val).trim().toLowerCase());return '<span class="badge '+(a?'':'off')+'">'+(a?'فعال':'غیرفعال')+'</span>'}return '<span title="'+esc(val)+'">'+esc(String(val).length>90?String(val).slice(0,90)+'…':val)+'</span>'}
