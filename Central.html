@@ -60,6 +60,8 @@ button,input,select,textarea{font-family:inherit}.app{max-width:1120px;margin:au
 <button class="subtab" onclick="showBookingTab('discount',this)">🎟️ تخفیف و VIP</button>
 <button class="subtab" onclick="showBookingTab('customers',this)">👥 مشتری‌ها</button>
 <button class="subtab" onclick="showBookingTab('bookings',this)">📋 رزروها</button>
+<button class="subtab" onclick="showBookingTab('payments',this)">💳 پرداخت‌ها</button>
+<button class="subtab" onclick="showBookingTab('logs',this)">🧾 گزارش‌های رزرو</button>
 </div>
 <div id="bookingContent"></div>
 </section>
@@ -180,6 +182,8 @@ function renderBookingTab(key){
  if(key==='discount'){renderDiscountPanel();return;}
  if(key==='customers'){renderReadOnlyPanel('customers','👥 مشتری‌ها','مشتری‌ها اطلاعاتی هستند و از اینجا نباید به‌صورت دستی حذف/تغییر داده شوند.');return;}
  if(key==='bookings'){renderReadOnlyPanel('bookings','📋 رزروها','رزروها فقط برای مشاهده و جستجو هستند؛ تأیید پرداخت، تأیید نوبت، Hold و Release همچنان فقط توسط Backend انجام می‌شود.');return;}
+  if(key==='payments'){renderReadOnlyPanel('payments','💳 پرداخت‌ها','سوابق پرداخت فقط برای مشاهده است؛ تأیید یا تغییر پرداخت باید از جریان امن Backend انجام شود.');return;}
+  if(key==='logs'){renderReadOnlyPanel('bookingLogs','🧾 گزارش‌های رزرو','گزارش‌ها فقط برای عیب‌یابی و پیگیری هستند و از این پنل ویرایش یا حذف نمی‌شوند.');return;}
  renderGenericCms(key,'bookingContent');
 }
 
@@ -499,7 +503,7 @@ function openCmsForm(key,rowNumber){
  html+='</div><div class="savebar"><div class="actions"><button class="btn" onclick="saveCmsForm(\''+escJs(key)+'\','+(rowNumber||0)+')">ذخیره</button><button class="btn alt" onclick="closeCmsModal()">انصراف</button></div><div id="cmsFormStatus" class="status"></div></div>';
  document.getElementById('cmsForm').innerHTML=html;document.getElementById('cmsModal').classList.add('open');
 }
-function keyLabel(k){return({services:'خدمات',courses:'کلاس‌ها',events:'ایونت‌ها',faq:'FAQ',pages:'صفحات',settings:'تنظیمات',home:'خانه',bookingContent:'محتوای رزرو',schedule:'زمان‌بندی',bookingSettings:'تنظیمات رزرو',discount:'تخفیف و VIP',customers:'مشتری‌ها',bookings:'رزروها'}[k]||k)}
+function keyLabel(k){return({services:'خدمات',courses:'کلاس‌ها',events:'ایونت‌ها',faq:'FAQ',pages:'صفحات',settings:'تنظیمات',home:'خانه',bookingContent:'محتوای رزرو',schedule:'زمان‌بندی',bookingSettings:'تنظیمات رزرو',discount:'تخفیف و VIP',customers:'مشتری‌ها',bookings:'رزروها',payments:'پرداخت‌ها',bookingLogs:'گزارش‌های رزرو'}[k]||k)}
 function closeCmsModal(){document.getElementById('cmsModal').classList.remove('open')}
 async function saveCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),payload={};data.headers.forEach((h,i)=>{const el=document.getElementById('cmsField_'+i);payload[h]=el?el.value:''});
