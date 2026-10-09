@@ -6,6 +6,7 @@
 <title>پنل مدیریت کائنات‌چی</title>
 <style>
 :root{--cream:#f6f0e4;--card:#fffdf8;--green:#294f3d;--green2:#376b52;--gold:#a58b5b;--ink:#26382e;--muted:#758078;--line:#e4dac8;--danger:#a14d4d;--blue:#536f88;--shadow:0 14px 38px rgba(42,65,52,.10)}
+.jalali-date-fields{display:grid;grid-template-columns:1fr 1.25fr .8fr;gap:6px;min-width:0}.jalali-date-fields select{min-width:0;width:100%}
 .image-field{display:grid;gap:8px;min-width:0}.image-field input[type=file]{font-size:12px;padding:8px;max-width:100%}.image-field img{max-width:100%;height:auto}.field input,.field select,.field textarea{min-width:0}
 @media(min-width:900px){.app{padding-left:24px;padding-right:24px}.modal{align-items:center}.modal-box{max-height:min(88vh,900px)}}
 @media(max-width:480px){.hero{padding:21px 16px;border-radius:24px}.hero h1{font-size:22px}.app{padding:12px 10px 28px}.tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.tab{padding:12px 5px;min-width:0}.subtabs{scroll-snap-type:x proximity}.subtab{scroll-snap-align:start}.crud-head{align-items:flex-start;flex-wrap:wrap}.crud-head>.btn{width:100%}.row-actions .btn{flex:1 1 auto}.table-wrap{-webkit-overflow-scrolling:touch}.form-grid{grid-template-columns:minmax(0,1fr)}.form-grid .full{grid-column:auto}}
@@ -600,11 +601,73 @@ function cell(h,v){const val=formatCmsCell(h,v);if(h==='فعال'||/active/i.tes
 function openCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),row=rowNumber?data.rows.find(r=>Number(r._row)===Number(rowNumber)):{};
  document.getElementById('cmsModalTitle').textContent=(rowNumber?'✏️ ویرایش':'＋ افزودن')+' · '+keyLabel(key);
- let html='<div class="help-note">این فرم برای مدیریت CMS است؛ Sheet پشت صحنه ذخیره‌سازی است و منطق Booking/Payment/VIP را اجرا نمی‌کند.</div><div class="form-grid">';
- data.headers.forEach((h,i)=>{const value=row&&row[h]!=null?row[h]:'';const id='cmsField_'+i;const long=/توضیح|شرح|متن|محتوا|جواب|پاسخ|description|content|text|answer|body/i.test(String(h));let control='';if(key==='bookingContent'&&h==='کلید'){const opts=[['booking_intro','معرفی رزرو'],['booking_guide','راهنمای رزرو'],['service_guide','راهنمای انتخاب خدمت'],['date_time_guide','راهنمای تاریخ و ساعت'],['payment_guide','راهنمای پرداخت'],['receipt_warning','هشدار ارسال رسید'],['tracking_guide','راهنمای پیگیری'],['custom_notice','نکته تکمیلی']];control='<select id="'+id+'" onchange="applyBookingPreset(this.value)"><option value="">انتخاب مورد آماده…</option>'+opts.map(o=>'<option value="'+o[0]+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';}else if(key==='bookingContent'&&h==='عنوان'){const opts=[['معرفی رزرو','معرفی رزرو'],['راهنمای رزرو','راهنمای رزرو'],['راهنمای انتخاب خدمت','راهنمای انتخاب خدمت'],['راهنمای تاریخ و ساعت','راهنمای تاریخ و ساعت'],['راهنمای پرداخت','راهنمای پرداخت'],['هشدار ارسال رسید','هشدار ارسال رسید'],['راهنمای پیگیری','راهنمای پیگیری'],['نکته تکمیلی','نکته تکمیلی']];control='<select id="'+id+'"><option value="">انتخاب عنوان…</option>'+opts.map(o=>'<option value="'+o[0]+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';}else if(key==='bookingContent'&&h==='بخش'){const opts=[['intro','معرفی رزرو'],['service','انتخاب خدمت'],['date_time','انتخاب تاریخ و ساعت'],['payment','پرداخت'],['receipt','ارسال رسید'],['tracking','پیگیری رزرو'],['notice','نکته و هشدار']];control='<select id="'+id+'"><option value="">انتخاب بخش…</option>'+opts.map(o=>'<option value="'+o[0]+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';}else if(key==='bookingContent'&&h==='ترتیب'){const opts=[['1','اول'],['2','دوم'],['3','سوم'],['4','چهارم'],['5','پنجم'],['6','ششم'],['7','هفتم'],['8','هشتم']];control='<select id="'+id+'"><option value="">انتخاب ترتیب…</option>'+opts.map(o=>'<option value="'+o[0]+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';}else if(key==='bookingContent'&&h==='محتوا'){const opts=[['برای دریافت نوبت، ابتدا خدمت موردنظر را انتخاب کن.','راهنمای شروع رزرو'],['پس از انتخاب خدمت، تاریخ و ساعت‌های آزاد را بررسی و زمان مناسب را انتخاب کن.','راهنمای انتخاب زمان'],['خدمت موردنظر را انتخاب کن؛ مبلغ و جزئیات آن پیش از ادامه نمایش داده می‌شود.','راهنمای انتخاب خدمت'],['از میان تاریخ‌ها و ساعت‌های آزاد نمایش‌داده‌شده، زمان مناسب را انتخاب کن.','راهنمای تاریخ و ساعت'],['مبلغ نهایی را بررسی کن و طبق راهنمای پرداخت، اطلاعات پرداخت را تکمیل کن.','راهنمای پرداخت'],['ارسال رسید به‌تنهایی به معنی تأیید نهایی پرداخت یا نوبت نیست.','هشدار ارسال رسید'],['پس از ثبت درخواست، کد پیگیری را نگه دار و وضعیت نوبت را دنبال کن.','راهنمای پیگیری'],['پیش از ثبت نهایی، اطلاعات واردشده را بررسی کن.','نکته تکمیلی']];control='<select id="'+id+'"><option value="">انتخاب متن آماده…</option>'+opts.map(o=>'<option value="'+esc(o[0])+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';}else if(key==='dailyContent'&&h==='لینک تصویر'){control='<div class="image-field"><input id="'+id+'" value="'+esc(value)+'" placeholder="آدرس تصویر (اختیاری)" oninput="previewDailyImage(this.value)"><input type="file" id="dailyImageFile" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewDailyImageFile(this)"><div class="muted">یا از دستگاهت تصویر انتخاب کن (حداکثر ۵ مگابایت).</div><img id="dailyImagePreview" alt="پیش‌نمایش تصویر" src="'+esc(value)+'" style="display:'+(value?'block':'none')+';width:min(100%,240px);max-height:240px;object-fit:contain;border-radius:14px;margin-top:8px;border:1px solid var(--line);background:#fff"></div>';}else if(key==='bookingContent'&&h==='لینک تصویر'){control='<select id="'+id+'"><option value="">بدون تصویر</option></select>';}else if(h==='فعال'){const activeValue=(row&&row[h]!=null&&String(row[h]).trim()!=='')?String(value):'بله';control='<select id="'+id+'"><option value="بله" '+(isActive(activeValue)?'selected':'')+'>بله — فعال</option><option value="خیر" '+(!isActive(activeValue)?'selected':'')+'>خیر — غیرفعال</option></select>';}else if(long){control='<textarea id="'+id+'">'+esc(value)+'</textarea>';}else{control='<input id="'+id+'" value="'+esc(value)+'" placeholder="'+esc(h)+'">';}html+='<div class="field '+(long?'full':'')+'"><label>'+esc(h)+'</label>'+control+'</div>';});
+ const nextOrder=String(data.rows.reduce((max,r)=>Math.max(max,Number(r['ترتیب'])||0),0)+1);
+ let html='<div class="help-note">'+(key==='dailyContent'?'شناسه و ترتیب به‌صورت خودکار پیشنهاد می‌شوند. تاریخ‌ها را با انتخاب سال، ماه و روز شمسی تعیین کن؛ خالی گذاشتن هر دو تاریخ یعنی بدون محدودیت زمانی.':'این فرم برای مدیریت CMS است؛ Sheet پشت صحنه ذخیره‌سازی است و منطق Booking/Payment/VIP را اجرا نمی‌کند.')+'</div><div class="form-grid">';
+ data.headers.forEach((h,i)=>{
+  let value=row&&row[h]!=null?row[h]:'';
+  const id='cmsField_'+i,long=/توضیح|شرح|متن|محتوا|جواب|پاسخ|description|content|text|answer|body/i.test(String(h));
+  let control='';
+  if(key==='dailyContent'&&h==='شناسه'){
+   if(!value)value='daily-'+Date.now().toString(36);
+   control='<input id="'+id+'" value="'+esc(value)+'" readonly aria-readonly="true"><div class="muted">شناسه خودکار است.</div>';
+  }else if(key==='dailyContent'&&h==='دسته'){
+   const categories=['عمومی','آموزشی','انگیزشی','تأمل','یادآوری','معرفی خدمات','مناسبت‌ها'];
+   const opts=[...new Set([String(value||''),...categories].filter(Boolean))];
+   control='<select id="'+id+'"><option value="">انتخاب دسته…</option>'+opts.map(o=>'<option value="'+esc(o)+'" '+(String(value)===o?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+  }else if(key==='dailyContent'&&h==='ترتیب'){
+   if(!value)value=nextOrder;
+   control='<input id="'+id+'" type="number" min="1" step="1" value="'+esc(value)+'" placeholder="'+nextOrder+'"><div class="muted">پیش‌فرض: '+esc(nextOrder)+'</div>';
+  }else if(key==='dailyContent'&&(h==='تاریخ شروع'||h==='تاریخ پایان')){
+   const parts=String(value||'').replace(/-/g,'/').split('/');
+   const y=parts.length===3?Number(parts[0]):'',m=parts.length===3?Number(parts[1]):'',d=parts.length===3?Number(parts[2]):'';
+   const yearOptions=[...new Set([...Array.from({length:16},(_,n)=>1400+n),...(y?[y]:[])])].sort((a,b)=>a-b);
+   const monthNames=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+   control='<input type="hidden" id="'+id+'" value="'+esc(value)+'"><div class="jalali-date-fields"><select id="'+id+'_year" aria-label="سال" onchange="syncDailyDateField('+i+')"><option value="">سال</option>'+yearOptions.map(n=>'<option value="'+n+'" '+(Number(y)===n?'selected':'')+'>'+n+'</option>').join('')+'</select><select id="'+id+'_month" aria-label="ماه" onchange="syncDailyDateField('+i+')"><option value="">ماه</option>'+monthNames.map((n,j)=>'<option value="'+(j+1)+'" '+(Number(m)===j+1?'selected':'')+'>'+n+'</option>').join('')+'</select><select id="'+id+'_day" aria-label="روز" onchange="syncDailyDateField('+i+')"><option value="">روز</option>'+Array.from({length:31},(_,j)=>j+1).map(n=>'<option value="'+n+'" '+(Number(d)===n?'selected':'')+'>'+n+'</option>').join('')+'</select></div><div class="muted">تاریخ شمسی؛ نمونه: ۱۴۰۵/۰۷/۱۷</div>';
+  }else if(key==='bookingContent'&&h==='کلید'){
+   const opts=[['booking_intro','معرفی رزرو'],['booking_guide','راهنمای رزرو'],['service_guide','راهنمای انتخاب خدمت'],['date_time_guide','راهنمای تاریخ و ساعت'],['payment_guide','راهنمای پرداخت'],['receipt_warning','هشدار ارسال رسید'],['tracking_guide','راهنمای پیگیری'],['custom_notice','نکته تکمیلی']];
+   control='<select id="'+id+'" onchange="applyBookingPreset(this.value)"><option value="">انتخاب مورد آماده…</option>'+opts.map(o=>'<option value="'+o[0]+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+  }else if(key==='bookingContent'&&h==='عنوان'){
+   const opts=['معرفی رزرو','راهنمای رزرو','راهنمای انتخاب خدمت','راهنمای تاریخ و ساعت','راهنمای پرداخت','هشدار ارسال رسید','راهنمای پیگیری','نکته تکمیلی'];
+   control='<select id="'+id+'"><option value="">انتخاب عنوان…</option>'+opts.map(o=>'<option value="'+o+'" '+(String(value)===o?'selected':'')+'>'+o+'</option>').join('')+'</select>';
+  }else if(key==='bookingContent'&&h==='بخش'){
+   const opts=[['intro','معرفی رزرو'],['service','انتخاب خدمت'],['date_time','انتخاب تاریخ و ساعت'],['payment','پرداخت'],['receipt','ارسال رسید'],['tracking','پیگیری رزرو'],['notice','نکته و هشدار']];
+   control='<select id="'+id+'"><option value="">انتخاب بخش…</option>'+opts.map(o=>'<option value="'+o[0]+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+  }else if(key==='bookingContent'&&h==='ترتیب'){
+   const opts=[['1','اول'],['2','دوم'],['3','سوم'],['4','چهارم'],['5','پنجم'],['6','ششم'],['7','هفتم'],['8','هشتم']];
+   control='<select id="'+id+'"><option value="">انتخاب ترتیب…</option>'+opts.map(o=>'<option value="'+o[0]+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+  }else if(key==='bookingContent'&&h==='محتوا'){
+   const opts=[['برای دریافت نوبت، ابتدا خدمت موردنظر را انتخاب کن.','راهنمای شروع رزرو'],['پس از انتخاب خدمت، تاریخ و ساعت‌های آزاد را بررسی و زمان مناسب را انتخاب کن.','راهنمای انتخاب زمان'],['خدمت موردنظر را انتخاب کن؛ مبلغ و جزئیات آن پیش از ادامه نمایش داده می‌شود.','راهنمای انتخاب خدمت'],['از میان تاریخ‌ها و ساعت‌های آزاد نمایش‌داده‌شده، زمان مناسب را انتخاب کن.','راهنمای تاریخ و ساعت'],['مبلغ نهایی را بررسی کن و طبق راهنمای پرداخت، اطلاعات پرداخت را تکمیل کن.','راهنمای پرداخت'],['ارسال رسید به‌تنهایی به معنی تأیید نهایی پرداخت یا نوبت نیست.','هشدار ارسال رسید'],['پس از ثبت درخواست، کد پیگیری را نگه دار و وضعیت نوبت را دنبال کن.','راهنمای پیگیری'],['پیش از ثبت نهایی، اطلاعات واردشده را بررسی کن.','نکته تکمیلی']];
+   control='<select id="'+id+'"><option value="">انتخاب متن آماده…</option>'+opts.map(o=>'<option value="'+esc(o[0])+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+  }else if(key==='dailyContent'&&h==='لینک تصویر'){
+   control='<div class="image-field"><input id="'+id+'" value="'+esc(value)+'" placeholder="آدرس تصویر (اختیاری)" oninput="previewDailyImage(this.value)"><input type="file" id="dailyImageFile" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewDailyImageFile(this)"><div class="muted">یا از دستگاهت تصویر انتخاب کن (حداکثر ۵ مگابایت).</div><img id="dailyImagePreview" alt="پیش‌نمایش تصویر" src="'+esc(value)+'" style="display:'+(value?'block':'none')+';width:min(100%,240px);max-height:240px;object-fit:contain;border-radius:14px;margin-top:8px;border:1px solid var(--line);background:#fff"></div>';
+  }else if(key==='bookingContent'&&h==='لینک تصویر'){
+   control='<select id="'+id+'"><option value="">بدون تصویر</option></select>';
+  }else if(h==='فعال'){
+   const activeValue=(row&&row[h]!=null&&String(row[h]).trim()!=='')?String(value):'بله';
+   control='<select id="'+id+'"><option value="بله" '+(isActive(activeValue)?'selected':'')+'>بله — فعال</option><option value="خیر" '+(!isActive(activeValue)?'selected':'')+'>خیر — غیرفعال</option></select>';
+  }else if(long){control='<textarea id="'+id+'">'+esc(value)+'</textarea>';}
+  else{control='<input id="'+id+'" value="'+esc(value)+'" placeholder="'+esc(h)+'">';}
+  html+='<div class="field '+(long?'full':'')+'"><label>'+esc(h)+'</label>'+control+'</div>';
+ });
  html+='</div><div class="savebar"><div class="actions"><button class="btn" onclick="saveCmsForm(\''+escJs(key)+'\','+(rowNumber||0)+')">ذخیره</button><button class="btn alt" onclick="closeCmsModal()">انصراف</button></div><div id="cmsFormStatus" class="status"></div></div>';
  document.getElementById('cmsForm').innerHTML=html;document.getElementById('cmsModal').classList.add('open');
 }
+function syncDailyDateField(index){
+ const hidden=document.getElementById('cmsField_'+index),y=document.getElementById('cmsField_'+index+'_year'),m=document.getElementById('cmsField_'+index+'_month'),d=document.getElementById('cmsField_'+index+'_day');
+ if(!hidden||!y||!m||!d)return;
+ if(!y.value||!m.value||!d.value){hidden.value='';return;}
+ hidden.value=String(y.value)+'/'+String(m.value).padStart(2,'0')+'/'+String(d.value).padStart(2,'0');
+}
+function isJalaliLeapYear(year){const r=((Number(year)%33)+33)%33;return [1,5,9,13,17,22,26,30].includes(r);}
+function validJalaliDate(value){
+ if(!value)return true;
+ const m=String(value).match(/^(14\d{2})\/(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])$/);
+ if(!m)return false;
+ const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]);
+ const max=mo<=6?31:mo<=11?30:(isJalaliLeapYear(y)?30:29);
+ return d<=max;
+}
+
 function applyBookingPreset(key){
  const presets={
   booking_intro:{title:'معرفی رزرو',section:'intro',content:'برای دریافت نوبت، ابتدا خدمت موردنظر را انتخاب کن.',order:'1'},
@@ -627,7 +690,19 @@ function previewDailyImageFile(input){const file=input&&input.files&&input.files
 function readFileAsDataUrl(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(new Error('خواندن تصویر ممکن نشد.'));reader.readAsDataURL(file);});}
 async function saveCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),payload={};data.headers.forEach((h,i)=>{const el=document.getElementById('cmsField_'+i);payload[h]=el?el.value:''});
- const status=document.getElementById('cmsFormStatus');status.textContent='در حال ذخیره…';
+ const status=document.getElementById('cmsFormStatus');
+ if(key==='dailyContent'){
+  data.headers.forEach((h,i)=>{if(h==='تاریخ شروع'||h==='تاریخ پایان'){syncDailyDateField(i);const el=document.getElementById('cmsField_'+i);payload[h]=el?el.value:'';}});
+  const start=String(payload['تاریخ شروع']||''),end=String(payload['تاریخ پایان']||'');
+  if(!String(payload['عنوان']||'').trim()){status.textContent='لطفاً عنوان را وارد کن.';return;}
+  if(!String(payload['متن']||'').trim()){status.textContent='لطفاً متن محتوا را وارد کن.';return;}
+  if(!String(payload['دسته']||'').trim()){status.textContent='لطفاً یک دسته انتخاب کن.';return;}
+  if(start&&!validJalaliDate(start)){status.textContent='تاریخ شروع معتبر نیست؛ سال، ماه و روز شمسی را بررسی کن.';return;}
+  if(end&&!validJalaliDate(end)){status.textContent='تاریخ پایان معتبر نیست؛ سال، ماه و روز شمسی را بررسی کن.';return;}
+  if(start&&end&&start>end){status.textContent='تاریخ پایان نباید قبل از تاریخ شروع باشد.';return;}
+  if(payload['ترتیب']&&(!Number.isInteger(Number(payload['ترتیب']))||Number(payload['ترتیب'])<1)){status.textContent='ترتیب باید عدد صحیح مثبت باشد.';return;}
+ }
+ status.textContent='در حال ذخیره…';
  try{
   if(key==='dailyContent'){
    const fileInput=document.getElementById('dailyImageFile'),file=fileInput&&fileInput.files&&fileInput.files[0];
