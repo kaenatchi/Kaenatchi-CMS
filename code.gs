@@ -262,7 +262,10 @@ function deleteItem(sheetName,rowNumber) {
 function toggleItem(sheetName,rowNumber) {
   const sheet=getSheet_(sheetName);
   if(!rowNumber||rowNumber<2) throw new Error('شماره ردیف نامعتبر است.');
-  const cell=sheet.getRange(rowNumber,1),current=String(cell.getDisplayValue()).trim().toLowerCase();
+  const headers=getHeaders_(sheet);
+  const activeHeader=headers.indexOf('فعال')>=0?'فعال':headers.indexOf('Active')>=0?'Active':'';
+  const column=activeHeader?headers.indexOf(activeHeader)+1:1;
+  const cell=sheet.getRange(rowNumber,column),current=String(cell.getDisplayValue()).trim().toLowerCase();
   const active=current==='بله'||current==='فعال'||current==='true'||current==='1'||current==='yes';
   cell.setValue(active?'خیر':'بله');
   return {success:true,active:!active};
