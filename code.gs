@@ -63,6 +63,17 @@ function getOrCreateCmsSheet_(sheetName, headers) {
   return sheet;
 }
 
+function ensureCmsHeaders_(sheet, requiredHeaders) {
+  const existing = getHeaders_(sheet);
+  const missing = requiredHeaders.filter(function(header) {
+    return existing.indexOf(header) < 0;
+  });
+  if (missing.length) {
+    sheet.getRange(1, existing.length + 1, 1, missing.length).setValues([missing]);
+  }
+  return sheet;
+}
+
 function getCMSData() {
   /*
    * BookingSettings and Booking data live in the same authoritative
@@ -72,9 +83,12 @@ function getCMSData() {
   const bookingContentSheet = getOrCreateCmsSheet_('BookingContent', [
     'کلید', 'عنوان', 'بخش', 'محتوا', 'لینک تصویر', 'ترتیب', 'فعال'
   ]);
-  const dailyContentSheet = getOrCreateCmsSheet_('DailyContent', [
-    'شناسه', 'عنوان', 'متن', 'لینک تصویر', 'دسته', 'فعال', 'تاریخ شروع', 'تاریخ پایان', 'ترتیب'
-  ]);
+  const dailyContentSheet = ensureCmsHeaders_(
+    getOrCreateCmsSheet_('DailyContent', [
+      'شناسه', 'عنوان', 'متن', 'لینک تصویر', 'دسته', 'فعال', 'تاریخ شروع', 'تاریخ پایان', 'ترتیب'
+    ]),
+    ['محل نمایش']
+  );
 
   const settingsSheet=getSpreadsheet_().getSheetByName('BookingSettings')||getSpreadsheet_().getSheetByName('BookingSetings');
   return {
@@ -372,3 +386,57 @@ function uploadDailyContentImage(dataUrl, fileName, mimeType) {
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return {success:true, url:'https://drive.google.com/uc?export=view&id=' + file.getId(), fileId:file.getId(), name:file.getName()};
 }
+
+// Adds a curated starter library once, without duplicating rows on repeat runs.
+// Images are optional; the Mini App keeps its branded visual fallback when none is attached.
+function seedDailyContentStarterPack() {
+  const sheet = getSheet_('dailyContent');
+  const headers = getHeaders_(sheet);
+  const existingIds = new Set(getAllData_('dailyContent').rows.map(function(row) {
+    return String(row['شناسه'] || '').trim();
+  }));
+  const starter = [
+    ['starter-mood-01','یک مکث کوچک','لازم نیست همه‌چیز همین امروز حل شود. گاهی کافی است چند نفس آرام بکشی و فقط قدم بعدی را ببینی.','تأمل','حال‌وهوای امروز'],
+    ['starter-mood-02','با خودت مهربان‌تر باش','با خودت همان‌طور حرف بزن که با یک دوست عزیز حرف می‌زنی؛ با صبر، احترام و کمی مهربانی بیشتر.','یادآوری','حال‌وهوای امروز'],
+    ['starter-mood-03','از نو شروع‌کردن','شروع دوباره همیشه پر سر و صدا نیست. گاهی فقط یک انتخاب کوچک و آرام است که مسیر روز را تغییر می‌دهد.','انگیزشی','حال‌وهوای امروز'],
+    ['starter-mood-04','به ریتم خودت اعتماد کن','لازم نیست با سرعت دیگران پیش بروی. برای بعضی مسیرها، آهسته و پیوسته رفتن بهترین راه است.','تأمل','حال‌وهوای امروز'],
+    ['starter-mood-05','یک گوشه برای آرامش','چند دقیقه از شلوغی فاصله بگیر؛ پنجره را باز کن، آب بنوش و اجازه بده ذهنت کمی خلوت شود.','عمومی','حال‌وهوای امروز'],
+    ['starter-mood-06','همه‌چیز لازم نیست کامل باشد','گاهی نسخهٔ ساده و واقعیِ یک کار، از نسخهٔ بی‌نقصی که هیچ‌وقت شروع نمی‌شود ارزشمندتر است.','انگیزشی','حال‌وهوای امروز'],
+    ['starter-mood-07','احساست را نام‌گذاری کن','اگر روز شلوغی داری، از خودت بپرس: الان دقیقاً چه احساسی دارم و به چه چیزی نیاز دارم؟ همین پرسش می‌تواند شروعی روشن باشد.','آموزشی','حال‌وهوای امروز'],
+    ['starter-mood-08','به چیزهای کوچک توجه کن','نور روی دیوار، عطر چای یا چند دقیقه سکوت؛ گاهی لحظه‌های ساده کمک می‌کنند دوباره به اکنون برگردیم.','تأمل','حال‌وهوای امروز'],
+    ['starter-mood-09','برای خودت جا باز کن','استراحت جایزه‌ای برای تمام‌کردن همهٔ کارها نیست. بخشی طبیعی از مراقبت از خودت است.','یادآوری','حال‌وهوای امروز'],
+    ['starter-mood-10','یک قدم کافی است','وقتی مسیر بزرگ به نظر می‌رسد، آن را کوچک‌تر کن. امروز فقط یک قدم روشن و قابل انجام بردار.','انگیزشی','حال‌وهوای امروز'],
+    ['starter-mood-11','به بدنت گوش بده','کمی مکث کن و ببین بدنت چه می‌گوید: حرکت می‌خواهد، آب، غذا، استراحت یا فقط چند لحظه سکوت؟','عمومی','حال‌وهوای امروز'],
+    ['starter-mood-12','فضای تازه بساز','مرتب‌کردن یک گوشهٔ کوچک، خاموش‌کردن یک اعلان یا کنارگذاشتن یک کار غیرضروری می‌تواند فضا را سبک‌تر کند.','عمومی','حال‌وهوای امروز'],
+    ['starter-mood-13','لازم نیست عجله کنی','بعضی پاسخ‌ها با فشار بیشتر پیدا نمی‌شوند. کمی فاصله بگیر و بعد با ذهنی آرام‌تر برگرد.','تأمل','حال‌وهوای امروز'],
+    ['starter-mood-14','به انتخاب بعدی فکر کن','به‌جای قضاوت‌کردن تمام مسیر، از خودت بپرس: قدم بعدی که با ارزش‌هایم هماهنگ است چیست؟','آموزشی','حال‌وهوای امروز'],
+    ['starter-mood-15','امروز را ساده‌تر کن','سه اولویت کافی است. بقیهٔ کارها را یادداشت کن تا لازم نباشد همه را هم‌زمان در ذهن نگه داری.','عمومی','حال‌وهوای امروز'],
+    ['starter-mood-16','با کنجکاوی نگاه کن','به‌جای اینکه فوراً برای هر تجربه‌ای نتیجه‌گیری کنی، کمی کنجکاو بمان و ببین چه چیزی می‌توانی از آن یاد بگیری.','تأمل','حال‌وهوای امروز'],
+    ['starter-suggest-01','یک تجربه برای خودت انتخاب کن','اگر دلت می‌خواهد زمانی را به خودت اختصاص بدهی، خدمات کائنات‌چی را ببین و گزینه‌ای را انتخاب کن که با نیاز امروزت هماهنگ است.','معرفی خدمات','پیشنهاد امروز'],
+    ['starter-suggest-02','یادگیری را به تعویق نینداز','اگر موضوعی مدت‌هاست توجهت را جلب کرده، نگاهی به کلاس‌ها و دوره‌های کائنات‌چی بینداز و از یک قدم کوچک شروع کن.','آموزشی','پیشنهاد امروز'],
+    ['starter-suggest-03','برای تجربه‌ای تازه جا باز کن','رویدادهای فعال کائنات‌چی را بررسی کن؛ شاید یک برنامهٔ تازه، فرصتی برای یادگیری یا آشنایی با تجربه‌ای متفاوت باشد.','معرفی خدمات','پیشنهاد امروز'],
+    ['starter-suggest-04','از بین گزینه‌ها آگاهانه انتخاب کن','قبل از انتخاب خدمت یا کلاس، توضیحات را بخوان و ببین کدام گزینه با زمان، علاقه و نیاز فعلی‌ات تناسب بیشتری دارد.','آموزشی','پیشنهاد امروز'],
+    ['starter-curated-01','مکثی برای خودت','یک یادآوری کوتاه برای روزهای پرمشغله: تو هم بخشی از فهرست کارهای مهمت هستی.','یادآوری','منتخب'],
+    ['starter-curated-02','تمرین یک‌دقیقه‌ای','شانه‌هایت را رها کن، سه نفس آرام بکش و توجهت را برای چند لحظه به محیط اطرافت برگردان.','آموزشی','منتخب'],
+    ['starter-curated-03','پرسشی برای نوشتن','این هفته چه چیزی انرژی‌ات را بیشتر می‌کند و چه چیزی بی‌دلیل از تو انرژی می‌گیرد؟ دو مورد از هر کدام بنویس.','تأمل','منتخب'],
+    ['starter-curated-04','انتخاب آگاهانه','پیش از گفتن بله به یک کار تازه، از خودت بپرس آیا واقعاً برایش زمان و ظرفیت دارم؟','یادآوری','منتخب']
+  ];
+  const rowsToAdd = starter.filter(function(item) { return !existingIds.has(item[0]); });
+  if (!rowsToAdd.length) {
+    return {success:true, added:0, message:'بستهٔ محتوای شروع قبلاً اضافه شده است.'};
+  }
+  const nowOrder = getAllData_('dailyContent').rows.reduce(function(max, row) {
+    return Math.max(max, Number(row['ترتیب']) || 0);
+  }, 0);
+  const values = rowsToAdd.map(function(item, index) {
+    const record = {
+      'شناسه':item[0], 'عنوان':item[1], 'متن':item[2], 'لینک تصویر':'',
+      'دسته':item[3], 'فعال':'بله', 'تاریخ شروع':'', 'تاریخ پایان':'',
+      'ترتیب':String(nowOrder + index + 1), 'محل نمایش':item[4]
+    };
+    return headers.map(function(header) { return record[header] == null ? '' : record[header]; });
+  });
+  sheet.getRange(sheet.getLastRow() + 1, 1, values.length, headers.length).setValues(values);
+  return {success:true, added:values.length, message:'محتوای شروع با موفقیت اضافه شد.'};
+}
+

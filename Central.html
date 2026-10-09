@@ -133,9 +133,17 @@ function renderMainTab(key){
  renderGenericCms(map[key]||key,'mainContent');
 }
 
+async function seedDailyContent(){
+ if(!confirm('۲۴ متن آمادهٔ شروع به کتابخانه اضافه شود؟ موارد تکراری دوباره اضافه نمی‌شوند. تصاویر را می‌توانی بعداً برای هر مورد بارگذاری کنی.'))return;
+ try{
+  const result=await runServer('seedDailyContentStarterPack');
+  await loadCms();
+  alert((result&&result.message?result.message:'عملیات انجام شد.')+(result&&typeof result.added==='number'?' تعداد افزوده‌شده: '+result.added:''));
+ }catch(e){alert('افزودن بستهٔ شروع ناموفق بود: '+(e.message||e))}
+}
 function renderDailyContent(){
  const data=normalizeData(cmsData.dailyContent);
- let html='<div class="card"><div class="crud-head"><div><h3>✨ کتابخانه محتوای روزانه</h3><div class="muted">متن‌ها و تصاویر را یک‌بار اضافه کن. مینی‌اپ هر روز یک محتوای فعال را به‌شکل پایدار انتخاب می‌کند؛ رفرش صفحه در همان روز انتخاب را تغییر نمی‌دهد.</div></div><button class="btn" onclick="openCmsForm(\'dailyContent\')">＋ افزودن محتوا</button></div><div class="help-note">برای عکس می‌توانی از گوشی یا کامپیوتر فایل انتخاب کنی. فرمت JPG، PNG، WebP یا GIF و حداکثر حجم ۵ مگابایت. پیشنهاد کارت عمودی: ۱۰۸۰×۱۳۵۰ پیکسل؛ تصویر با برش کنترل‌شده نمایش داده می‌شود.</div>';
+ let html='<div class="card"><div class="crud-head"><div><h3>✨ کتابخانه محتوای روزانه</h3><div class="muted">متن‌ها و تصاویر را یک‌بار اضافه کن. انتخاب روزانه خودکار است؛ برای مناسبت‌ها تاریخ بده و برای پیشنهاد یا منتخب، محل نمایش را مشخص کن.</div></div><div class="row-actions"><button class="btn alt" onclick="seedDailyContent()">🌿 افزودن بستهٔ شروع</button><button class="btn" onclick="openCmsForm(\'dailyContent\')">＋ افزودن محتوا</button></div></div><div class="help-note">برای عکس می‌توانی از گوشی یا کامپیوتر فایل انتخاب کنی. فرمت JPG، PNG، WebP یا GIF و حداکثر حجم ۵ مگابایت. پیشنهاد کارت عمودی: ۱۰۸۰×۱۳۵۰ پیکسل؛ تصویر با برش کنترل‌شده نمایش داده می‌شود.</div>';
  if(!data.rows.length) html+='<div class="empty">هنوز محتوایی ثبت نشده است. با افزودن چند متن و تصویر، انتخاب روزانه فعال می‌شود.</div>';
  html+='<div class="table-wrap"><table class="table"><thead><tr><th>عنوان</th><th>دسته</th><th>وضعیت</th><th>ترتیب</th><th>تصویر</th><th>عملیات</th></tr></thead><tbody>';
  data.rows.forEach(row=>{html+='<tr><td>'+esc(row['عنوان']||'')+'</td><td>'+esc(row['دسته']||'—')+'</td><td><span class="badge '+(isActive(row['فعال'])?'':'off')+'">'+(isActive(row['فعال'])?'فعال':'غیرفعال')+'</span></td><td>'+esc(row['ترتیب']||'')+'</td><td>'+(row['لینک تصویر']?'<a href="'+esc(row['لینک تصویر'])+'" target="_blank" rel="noopener">نمایش تصویر</a>':'بدون تصویر')+'</td><td><div class="row-actions"><button class="btn alt" onclick="openCmsForm(\'dailyContent\','+row._row+')">ویرایش</button><button class="btn alt" onclick="toggleCms(\'dailyContent\','+row._row+')">تغییر وضعیت</button><button class="btn danger" onclick="deleteCms(\'dailyContent\','+row._row+')">حذف</button></div></td></tr>';});
@@ -602,7 +610,7 @@ function openCmsForm(key,rowNumber){
  const data=normalizeData(cmsData[key]),row=rowNumber?data.rows.find(r=>Number(r._row)===Number(rowNumber)):{};
  document.getElementById('cmsModalTitle').textContent=(rowNumber?'✏️ ویرایش':'＋ افزودن')+' · '+keyLabel(key);
  const nextOrder=String(data.rows.reduce((max,r)=>Math.max(max,Number(r['ترتیب'])||0),0)+1);
- let html='<div class="help-note">'+(key==='dailyContent'?'شناسه و ترتیب به‌صورت خودکار پیشنهاد می‌شوند. تاریخ‌ها را با انتخاب سال، ماه و روز شمسی تعیین کن؛ خالی گذاشتن هر دو تاریخ یعنی بدون محدودیت زمانی.':'این فرم برای مدیریت CMS است؛ Sheet پشت صحنه ذخیره‌سازی است و منطق Booking/Payment/VIP را اجرا نمی‌کند.')+'</div><div class="form-grid">';
+ let html='<div class="help-note">'+(key==='dailyContent'?'شناسه و ترتیب خودکار است. محل نمایش را انتخاب کن: حال‌وهوای امروز، پیشنهاد امروز، منتخب یا همه بخش‌ها. برای مناسبت‌ها تاریخ شمسی تعیین کن؛ بدون تاریخ، محتوا در چرخش عمومی می‌ماند.':'این فرم برای مدیریت CMS است؛ Sheet پشت صحنه ذخیره‌سازی است و منطق Booking/Payment/VIP را اجرا نمی‌کند.')+'</div><div class="form-grid">';
  data.headers.forEach((h,i)=>{
   let value=row&&row[h]!=null?row[h]:'';
   const id='cmsField_'+i,long=/توضیح|شرح|متن|محتوا|جواب|پاسخ|description|content|text|answer|body/i.test(String(h));
@@ -614,6 +622,10 @@ function openCmsForm(key,rowNumber){
    const categories=['عمومی','آموزشی','انگیزشی','تأمل','یادآوری','معرفی خدمات','مناسبت‌ها'];
    const opts=[...new Set([String(value||''),...categories].filter(Boolean))];
    control='<select id="'+id+'"><option value="">انتخاب دسته…</option>'+opts.map(o=>'<option value="'+esc(o)+'" '+(String(value)===o?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+  }else if(key==='dailyContent'&&h==='محل نمایش'){
+   const places=['حال‌وهوای امروز','پیشنهاد امروز','منتخب','همه بخش‌ها','مناسبت‌ها'];
+   const opts=[...new Set([String(value||''),...places].filter(Boolean))];
+   control='<select id="'+id+'"><option value="">انتخاب محل نمایش…</option>'+opts.map(o=>'<option value="'+esc(o)+'" '+(String(value)===o?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select><div class="muted">برای محتوای قدیمیِ بدون انتخاب، رفتار «حال‌وهوای امروز» حفظ می‌شود.</div>';
   }else if(key==='dailyContent'&&h==='ترتیب'){
    if(!value)value=nextOrder;
    control='<input id="'+id+'" type="number" min="1" step="1" value="'+esc(value)+'" placeholder="'+nextOrder+'"><div class="muted">پیش‌فرض: '+esc(nextOrder)+'</div>';
