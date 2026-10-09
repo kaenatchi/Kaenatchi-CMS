@@ -24,11 +24,14 @@ function doGet(e) {
 }
 
 function getSpreadsheet_() { return SpreadsheetApp.openById(SPREADSHEET_ID); }
-function getSheet_(sheetName) {
-  const sheet = getSpreadsheet_().getSheetByName(sheetName);
-  if (!sheet) throw new Error('برگه پیدا نشد: ' + sheetName);
-  return sheet;
+function resolveSheetName_(sheetName) {
+  const aliases={services:'Services',courses:'Courses',events:'Events',faq:'FAQ',pages:'Pages',settings:'Settings',bookingContent:'BookingContent',bookingSettings:'BookingSettings',bookingLogs:'BookingLogs',blockedDates:'BlockedDates',blockedSlots:'BlockedSlots',bookings:'Bookings',customers:'Customers',payments:'Payments',schedule:'Schedule'};
+  const requested=String(sheetName||''),ss=getSpreadsheet_(),candidates=[aliases[requested]||requested];
+  if(requested==='bookingSettings'||requested==='BookingSettings')candidates.push('BookingSetings');
+  for(var i=0;i<candidates.length;i++){var found=ss.getSheetByName(candidates[i]);if(found)return found;}
+  throw new Error('برگه پیدا نشد: '+requested);
 }
+function getSheet_(sheetName){return resolveSheetName_(sheetName);}
 function getHeaders_(sheet) {
   const lastColumn = sheet.getLastColumn();
   if (lastColumn === 0) return [];
@@ -70,23 +73,15 @@ function getCMSData() {
     'کلید', 'عنوان', 'بخش', 'محتوا', 'لینک تصویر', 'ترتیب', 'فعال'
   ]);
 
+  const settingsSheet=getSpreadsheet_().getSheetByName('BookingSettings')||getSpreadsheet_().getSheetByName('BookingSetings');
   return {
-    services:getAllData_(SHEETS.services),
-    courses:getAllData_(SHEETS.courses),
-    events:getAllData_(SHEETS.events),
-    faq:getAllData_(SHEETS.faq),
-    pages:getAllData_(SHEETS.pages),
-    settings:getAllData_(SHEETS.settings),
-
-    bookingContent:{
-      headers:getHeaders_(bookingContentSheet),
-      rows:getAllData_('BookingContent').rows
-    },
-    bookingSettings:getAllData_('BookingSettings'),
-
-    bookings:getAllData_('Bookings'),
-    customers:getAllData_('Customers'),
-    payments:getAllData_('Payments')
+    services:getAllData_(SHEETS.services),courses:getAllData_(SHEETS.courses),events:getAllData_(SHEETS.events),
+    faq:getAllData_(SHEETS.faq),pages:getAllData_(SHEETS.pages),settings:getAllData_(SHEETS.settings),
+    bookingContent:{headers:getHeaders_(bookingContentSheet),rows:getAllData_('BookingContent').rows},
+    bookingSettings:settingsSheet?getAllData_(settingsSheet.getName()):{headers:[],rows:[]},
+    bookings:getAllData_('Bookings'),customers:getAllData_('Customers'),payments:getAllData_('Payments'),
+    schedule:getAllData_('Schedule'),blockedDates:getAllData_('BlockedDates'),blockedSlots:getAllData_('BlockedSlots'),
+    bookingLogs:getAllData_('BookingLogs')
   };
 }
 
@@ -274,7 +269,7 @@ function getDashboardStats() {
 }
 function getMiniAppData() {
   const data=getCMSData();
-  return {success:true,services:getActiveRows_(data.services.rows),courses:getActiveRows_(data.courses.rows),events:getActiveRows_(data.events.rows),faq:getActiveRows_(data.faq.rows),pages:getActiveRows_(data.pages.rows),settings:data.settings.rows};
+  return {success:true,services:getActiveRows_(data.services.rows),courses:getActiveRows_(data.courses.rows),events:getActiveRows_(data.events.rows),faq:getActiveRows_(data.faq.rows),pages:getActiveRows_(data.pages.rows),settings:data.settings.rows,bookingContent:getActiveRows_(data.bookingContent.rows).sort(function(a,b){return (Number(a['ترتیب'])||0)-(Number(b['ترتیب'])||0);})};
 }
 function getActiveRows_(rows) {
   return rows.filter(function(row){
