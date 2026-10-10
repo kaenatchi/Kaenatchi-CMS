@@ -80,7 +80,7 @@ function isPublicSettingKey_(rawKey) {
     'telegram','telegramurl','telegramlink','تلگرام','لینکتلگرام',
     'whatsapp','whatsappurl','whatsapplink','واتساپ','واتس‌اپ','لینکواتساپ',
     'instagram','instagramurl','instagramlink','اینستاگرام','لینکاینستاگرام',
-    'channel','telegramchannel','telegramchannelurl','telegramchannellink','کانال','لینککانال','کانالتلگرام',
+    'channel','telegramchannel','telegramchannelurl','telegramchannellink','کانال','لینککانال','کانالتلگرام','telegramchannelink',
     'bookingcardnumber','شمارهکارت','کارتبانکی','bookingbankname','نامبانک','بانک',
     'bookingcardholder','صاحبکارت','نامصاحبکارت','بنام','بنـام',
     'bookingpaymenttext','توضیحپرداخت','متنپرداخت'
