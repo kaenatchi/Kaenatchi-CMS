@@ -47,22 +47,18 @@ function getPublicRows_(name) {
   const indexes=[];
   headers.forEach((h,i)=>{if(allowed.has(normalizeHeader_(h)))indexes.push(i);});
   if (!indexes.length) return [];
+  // Preserve original row objects' public column names. The Mini App owns
+  // active/inactive filtering via cmsActive(), including its blank-status behavior.
   return sheet.getRange(2,1,nr-1,nc).getDisplayValues().map(row=>{
     const obj={};
     indexes.forEach(i=>{if(headers[i] && headers[i].trim())obj[headers[i]]=row[i];});
     return obj;
-  }).filter(isPubliclyActive_);
+  });
 }
 function getPublicSettings_() {
   return getPublicRows_('settings').filter(row=>
     isPublicSettingKey_(firstValue_(row,['کلید','key','نام','name']))
   );
-}
-function isPubliclyActive_(row) {
-  // Preserve the current branch's getActiveRows_ contract: only an explicit
-  // recognized value in the Persian "فعال" column is published.
-  const raw=String(row['فعال'] || '').trim().toLowerCase();
-  return ['بله','فعال','true','1','yes'].indexOf(raw)>=0;
 }
 function firstValue_(row,aliases) {
   const normalized={};
