@@ -65,6 +65,7 @@ button,input,select,textarea{font-family:inherit}.app{max-width:1120px;margin:au
 <button class="subtab" onclick="showBookingTab('discount',this)">🎟️ تخفیف و VIP</button>
 <button class="subtab" onclick="showBookingTab('customers',this)">👥 مشتری‌ها</button>
 <button class="subtab" onclick="showBookingTab('bookings',this)">📋 رزروها</button>
+<button class="subtab" onclick="showBookingTab('therapyRequests',this)">🌿 درخواست‌های تراپی</button>
 <button class="subtab" onclick="showBookingTab('payments',this)">💳 پرداخت‌ها</button>
 <button class="subtab" onclick="showBookingTab('logs',this)">🧾 گزارش‌های رزرو</button>
 </div>
@@ -83,7 +84,7 @@ button,input,select,textarea{font-family:inherit}.app{max-width:1120px;margin:au
 </div>
 
 <script>
-let cmsData={services:[],courses:[],events:[],faq:[],pages:[],settings:[],dailyContent:[],home:[],bookings:[],customers:[],payments:[],schedule:[],blockedDates:[],blockedSlots:[],bookingSettings:[],bookingContent:[],discount:[]};
+let cmsData={services:[],courses:[],events:[],faq:[],pages:[],settings:[],dailyContent:[],home:[],bookings:[],therapyRequests:[],customers:[],payments:[],schedule:[],blockedDates:[],blockedSlots:[],bookingSettings:[],bookingContent:[],discount:[]};
 let currentMainTab='home';
 let currentBookingTab='dashboard';
 
@@ -212,6 +213,7 @@ function renderBookingTab(key){
  if(key==='discount'){renderDiscountPanel();return;}
  if(key==='customers'){renderReadOnlyPanel('customers','👥 مشتری‌ها','مشتری‌ها اطلاعاتی هستند و از اینجا نباید به‌صورت دستی حذف/تغییر داده شوند.');return;}
  if(key==='bookings'){renderReadOnlyPanel('bookings','📋 رزروها','رزروها فقط برای مشاهده و جستجو هستند؛ تأیید پرداخت، تأیید نوبت، Hold و Release همچنان فقط توسط Backend انجام می‌شود.');return;}
+  if(key==='therapyRequests'){renderReadOnlyPanel('therapyRequests','🌿 درخواست‌های تراپی','درخواست‌های شمع‌تراپی و سایکوتراپی برای هماهنگی تلفنی؛ این بخش فقط برای مشاهده و پیگیری است. پاسخ آزاد مراجعه‌کننده فقط در پنل مدیریت نمایش داده می‌شود و در اعلان تلگرام ارسال نمی‌شود.');return;}
   if(key==='payments'){renderReadOnlyPanel('payments','💳 پرداخت‌ها','سوابق پرداخت فقط برای مشاهده است؛ تأیید یا تغییر پرداخت باید از جریان امن Backend انجام شود.');return;}
   if(key==='logs'){renderReadOnlyPanel('bookingLogs','🧾 گزارش‌های رزرو','گزارش‌ها فقط برای عیب‌یابی و پیگیری هستند و از این پنل ویرایش یا حذف نمی‌شوند.');return;}
  renderGenericCms(key,'bookingContent');
