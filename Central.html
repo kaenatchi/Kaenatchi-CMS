@@ -654,6 +654,16 @@ function openCmsForm(key,rowNumber){
    control='<div class="image-field"><input id="'+id+'" value="'+esc(value)+'" placeholder="آدرس تصویر (اختیاری)" oninput="previewDailyImage(this.value)"><input type="file" id="dailyImageFile" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewDailyImageFile(this)"><div class="muted">یا از دستگاهت تصویر انتخاب کن (حداکثر ۵ مگابایت).</div><img id="dailyImagePreview" alt="پیش‌نمایش تصویر" src="'+esc(value)+'" style="display:'+(value?'block':'none')+';width:min(100%,240px);max-height:240px;object-fit:contain;border-radius:14px;margin-top:8px;border:1px solid var(--line);background:#fff"></div>';
   }else if(key==='bookingContent'&&h==='لینک تصویر'){
    control='<select id="'+id+'"><option value="">بدون تصویر</option></select>';
+  }else if((key==='courses'||key==='events')&&h==='RegistrationMode'){
+   const modes=[['','تنظیم نشده (رفتار فعلی حفظ شود)'],['direct','ثبت‌نام مستقیم'],['approval_required','ثبت‌نام پس از تأیید مدیر']];
+   control='<select id="'+id+'">'+modes.map(o=>'<option value="'+o[0]+'" '+(String(value)===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select><div class="muted">این انتخاب تا زمان تکمیل منطق ثبت‌نام در بک‌اند، فقط تنظیمات CMS را آماده می‌کند.</div>';
+  }else if((key==='courses'||key==='events')&&h==='PaymentRequired'){
+   const modes=[['','مشخص نشده'],['false','بدون پرداخت'],['true','پرداخت لازم است']];
+   control='<select id="'+id+'">'+modes.map(o=>'<option value="'+o[0]+'" '+(String(value).toLowerCase()===o[0]?'selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+  }else if((key==='courses'||key==='events')&&h==='Capacity'){
+   control='<input id="'+id+'" type="number" min="1" step="1" value="'+esc(value)+'" placeholder="ظرفیت (اختیاری)"><div class="muted">تا وقتی خالی باشد، ظرفیت محدود تعریف نمی‌شود.</div>';
+  }else if((key==='courses'||key==='events')&&(h==='RegistrationOpensAt'||h==='RegistrationClosesAt')){
+   control='<input id="'+id+'" value="'+esc(value)+'" placeholder="مثلاً 2026-11-01T09:00"><div class="muted">تاریخ/ساعت به قالب ISO؛ اعتبارسنجی و اجرای آن در مرحله اتصال بک‌اند انجام می‌شود.</div>';
   }else if(h==='فعال'){
    const activeValue=(row&&row[h]!=null&&String(row[h]).trim()!=='')?String(value):'بله';
    control='<select id="'+id+'"><option value="بله" '+(isActive(activeValue)?'selected':'')+'>بله — فعال</option><option value="خیر" '+(!isActive(activeValue)?'selected':'')+'>خیر — غیرفعال</option></select>';

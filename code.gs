@@ -90,6 +90,15 @@ function getCMSData() {
     ['محل نمایش']
   );
 
+  // Add optional registration configuration columns at the end only.
+  // Existing course/event content and legacy behavior remain unchanged until a mode is explicitly selected.
+  ensureCmsHeaders_(getSheet_('courses'), [
+    'RegistrationMode', 'Capacity', 'RegistrationOpensAt', 'RegistrationClosesAt', 'PaymentRequired'
+  ]);
+  ensureCmsHeaders_(getSheet_('events'), [
+    'RegistrationMode', 'Capacity', 'RegistrationOpensAt', 'RegistrationClosesAt', 'PaymentRequired'
+  ]);
+
   const settingsSheet=getSpreadsheet_().getSheetByName('BookingSettings')||getSpreadsheet_().getSheetByName('BookingSetings');
   return {
     services:getAllData_(SHEETS.services),courses:getAllData_(SHEETS.courses),events:getAllData_(SHEETS.events),
