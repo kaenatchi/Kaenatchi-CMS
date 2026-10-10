@@ -74,7 +74,7 @@ function firstValue_(row,aliases) {
   return '';
 }
 function normalizeHeader_(value) {
-  return String(value||'').trim().toLowerCase().replace(/ي/g,'ی').replace(/ى/g,'ی').replace(/ك/g,'ک').replace(/[\\s_\\-]+/g,'');
+  return String(value||'').trim().toLowerCase().replace(/ي/g,'ی').replace(/ى/g,'ی').replace(/ك/g,'ک').replace(/[\s_-]+/g,'');
 }
 /** Exact allowlist; confirm live Settings keys before deploying. */
 function isPublicSettingKey_(rawKey) {
