@@ -69,3 +69,31 @@ Important limits:
 
 ## Audit reference (2026-10-10)
 See [`CMS-SERVER-AUTHORIZATION-AUDIT.md`](./CMS-SERVER-AUTHORIZATION-AUDIT.md) for the callable-surface risks and Mini App settings compatibility review. The audit confirms this branch is not release-ready: the public endpoint currently shares the same Apps Script deployment surface as admin HTML/global functions, and the live spreadsheet keys/payload have not been tested. The next implementation must first establish a verified server-side identity model and separate public/admin deployment surfaces. No merge or deployment is authorized.
+
+## Deployment separation implementation order — 2026-10-10
+
+### Target state
+
+- **Public content API project/deployment:** only `doGet` + a read-only public-data handler; serves the exact `getMiniAppData` JSON contract needed by the Main Mini App. It must not contain admin HTML or globally callable private management functions.
+- **Private CMS project/deployment:** serves the CMS management UI and private functions. Access must be enforced by a verified server-side Google identity/authentication policy for the owner/admin. The private deployment must not be the URL used by the Main Mini App.
+- **Shared source of truth:** the existing KaenatChi CMS spreadsheet remains authoritative. No duplicate booking/schedule/payment/VIP data stores are created.
+- **Main Mini App:** its CMS endpoint URL is switched only after the public project is deployed and its payload is compared against the existing contract. No UI rewrite is required just to split the endpoint.
+- **Booking transport / Worker / VIP / payment / Jalali / slot logic:** out of scope and unchanged.
+
+### Safe staging sequence
+
+1. Create a new Apps Script project for the public API; do not alter Version 46.
+2. Add only a read-only API implementation to that project. Do not copy admin functions, VIP functions, generic CRUD, uploads, or private collection readers.
+3. Define explicit field projections per public sheet. Do not return all sheet columns by default. Verify actual sheet headers before locking projections; the repository alone does not prove the live spreadsheet schema.
+4. Run structural tests against a copy or read-only test setup: expected response keys, required Mini App fields, no private collections, no private/internal columns, correct public settings.
+5. Deploy the public API as accessible to the Main Mini App and confirm the JSON response manually without touching the current URL.
+6. Create a separate private admin deployment with verified owner/admin authorization. Confirm anonymous callers cannot read or write private data and cannot invoke mutation functions.
+7. Only after both sides pass, and after explicit approval, change the Main Mini App CMS endpoint to the new public URL in a separate reviewable change.
+8. Keep Version 46 available as rollback until the new endpoint has passed compatibility checks. Do not delete or disable the old deployment during initial rollout.
+
+### Release blockers
+
+- Actual live sheet headers and sample public rows are not available in this source review, so exact public field projections cannot safely be guessed.
+- The current CMS endpoint URL is shared by the Mini App and the admin deployment. It must not be switched until a separate public deployment has been tested.
+- A private deployment's access setting and identity behavior must be verified in Apps Script itself; GitHub source inspection cannot prove deployment permissions.
+- No production change, endpoint switch, merge, or deployment is authorized by this plan alone.
