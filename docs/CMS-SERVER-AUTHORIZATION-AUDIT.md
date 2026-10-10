@@ -26,3 +26,16 @@ The active Main Mini App branch `feature/therapy-intake-shared-flow` uses the CM
 
 ## Protected scope
 Do not merge or deploy without explicit approval. Do not change the Main Mini App, Cloudflare Worker, booking flow, VIP tokens, payments, Jalali handling, live Schedule or CMS Version 46 during this audit.
+
+## Additional compatibility findings — 2026-10-10
+
+- The Main Mini App consumer uses substring matching in `cmsSetting()`, with these lookup families: `hours/ساعات`, `telegram/تلگرام`, `whatsapp/واتساپ`, `instagram/اینستاگرام`, `channel/کانال/telegramchannel`, `booking_card_number/شماره کارت/کارت بانکی`, `booking_bank_name/نام بانک/بانک`, `booking_card_holder/صاحب کارت/نام صاحب کارت/بنـام`, and `booking_payment_text/توضیح پرداخت/متن پرداخت`.
+- The draft server allowlist uses exact normalized key matching, so it is stricter than the Mini App consumer. Until the actual Settings sheet keys are verified, valid existing contact/payment settings could be omitted and the UI could fall back to defaults or show blank values.
+- The draft's channel aliases need a careful pass: `telegramchannelink` appears to be a typo for `telegramchannellink`. Do not broaden the allowlist to substring matching; verify actual keys and explicitly add only confirmed public keys.
+- The current `Central.html` branch diff adds course/event registration configuration fields to the CMS form. It does not add a verified authentication gate; treat this as unrelated existing branch work and do not interpret it as a security fix.
+- The public reader currently forwards whole row objects from public sheets (including internal `_row` metadata and all columns). Before release, define per-sheet public column projections and test the exact fields the Mini App reads.
+
+## Next safe checkpoint
+
+Do not add speculative authorization code to the combined public deployment. First verify the real deployment/project boundaries and select a design that isolates callable server functions. The safest target to evaluate is a separate read-only public-content Apps Script project/deployment and a separately access-controlled admin project/deployment, both using the same authoritative spreadsheet only where needed. This requires a compatibility test and an approved endpoint switch; it is not authorized for production yet.
+
