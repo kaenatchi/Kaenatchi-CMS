@@ -14,7 +14,7 @@ const PUBLIC_FIELDS = {
   events:['شناسه','id','slug','نام ایونت','عنوان','نام','title','توضیحات کامل','توضیحات','توضیح کوتاه','توضیح','متن','description','text','قیمت','هزینه','price','base price','مدت','مدت زمان','duration','فعال','active','status'],
   faq:['شناسه','id','slug','سؤال','سوال','پرسش','عنوان','نام','title','پاسخ','توضیحات','توضیح کوتاه','توضیح','متن','description','text','فعال','active','status'],
   pages:['شناسه','id','slug','کلید','key','نام صفحه','عنوان','نام','title','متن','توضیحات کامل','توضیحات','پاسخ','text','description','فعال','active','status'],
-  dailyContent:['شناسه','id','عنوان','title','متن','محتوا','توضیحات','text','content','لینک تصویر','تصویر','image url','image','دسته','دسته‌بندی','category','فعال','active','status','تاریخ شروع','شروع','start date','تاریخ پایان','پایان','end date','ترتیب','order','محل نمایش','جایگاه نمایش','placement','display in'],
+  dailyContent:['شناسه','id','عنوان','title','متن','محتوا','توضیحات','text','content','لینک تصویر','تصویر','image url','image','دسته','دسته‌بندی','category','فعال','active','status','تاریخ شروع','شروع','start date','تاریخ پایان','پایان','end date','ترتیب','order','شرح کوتاه','خلاصه','محل نمایش','جایگاه نمایش','placement','display in'],
   bookingContent:['کلید','key','عنوان','title','بخش','section','محتوا','متن','توضیحات','content','text','لینک تصویر','تصویر','image url','image','ترتیب','order','فعال','active','status'],
   settings:['کلید','key','نام','name','مقدار','value','متن','text','لینک','url']
 };
@@ -28,11 +28,18 @@ function jsonOutput_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
 function getMiniAppData_() {
+  const bookingContent = getPublicActiveRows_('bookingContent');
+  bookingContent.sort((a,b) => (Number(a['ترتیب'])||0) - (Number(b['ترتیب'])||0));
   return {
-    success:true, services:getPublicRows_('services'), courses:getPublicRows_('courses'),
-    events:getPublicRows_('events'), faq:getPublicRows_('faq'), pages:getPublicRows_('pages'),
-    settings:getPublicSettings_(), dailyContent:getPublicRows_('dailyContent'),
-    bookingContent:getPublicRows_('bookingContent')
+    success:true,
+    services:getPublicActiveRows_('services'),
+    courses:getPublicActiveRows_('courses'),
+    events:getPublicActiveRows_('events'),
+    faq:getPublicActiveRows_('faq'),
+    pages:getPublicActiveRows_('pages'),
+    settings:getPublicSettings_(),
+    dailyContent:getPublicActiveRows_('dailyContent'),
+    bookingContent:bookingContent
   };
 }
 function getPublicRows_(name) {
@@ -53,6 +60,14 @@ function getPublicRows_(name) {
     const obj={};
     indexes.forEach(i=>{if(headers[i] && headers[i].trim())obj[headers[i]]=row[i];});
     return obj;
+  });
+}
+function getPublicActiveRows_(name) {
+  // Match the current CMS endpoint: content rows are published only when the
+  // Persian "فعال" column explicitly contains a recognized active value.
+  return getPublicRows_(name).filter(row => {
+    const value=String(row['فعال']||'').trim().toLowerCase();
+    return value==='بله'||value==='فعال'||value==='true'||value==='1'||value==='yes';
   });
 }
 function getPublicSettings_() {
