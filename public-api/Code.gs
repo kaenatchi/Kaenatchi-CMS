@@ -105,12 +105,21 @@ function isPublicSettingKey_(rawKey) {
 /** Structural/privacy test only; live headers and compatibility remain unverified. */
 function testPublicPayloadSafety() {
   const data=getMiniAppData_();
-  const expected=['success','services','courses','events','faq','pages','settings','dailyContent','bookingContent'].sort();
+  const names=['services','courses','events','faq','pages','settings','dailyContent','bookingContent'];
+  const expected=['success'].concat(names).sort();
   const actual=Object.keys(data).sort();
   const topKeys=JSON.stringify(actual)===JSON.stringify(expected);
+  const privateKeys=['bookings','customers','payments','schedule','blockedDates','blockedSlots','bookingLogs','bookingSettings'];
+  const privateCollectionsAbsent=privateKeys.every(key=>!Object.prototype.hasOwnProperty.call(data,key));
   const settingsSafe=data.settings.every(row=>isPublicSettingKey_(firstValue_(row,['کلید','key','نام','name'])));
-  const rowMetadataAbsent=['services','courses','events','faq','pages','settings','dailyContent','bookingContent'].every(n=>data[n].every(row=>!Object.prototype.hasOwnProperty.call(row,'_row')));
-  const result={ok:topKeys&&settingsSafe&&rowMetadataAbsent,expectedTopLevelKeysOnly:topKeys,privateCollectionsAbsent:true,settingsAllowlisted:settingsSafe,rowMetadataAbsent,
+  const projectionSafe=names.every(name=>{
+    const allowed=new Set(PUBLIC_FIELDS[name].map(normalizeHeader_));
+    return data[name].every(row=>Object.keys(row).every(key=>allowed.has(normalizeHeader_(key))));
+  });
+  const rowMetadataAbsent=names.every(name=>data[name].every(row=>!Object.prototype.hasOwnProperty.call(row,'_row')));
+  const result={ok:topKeys&&privateCollectionsAbsent&&settingsSafe&&projectionSafe&&rowMetadataAbsent,
+    expectedTopLevelKeysOnly:topKeys,privateCollectionsAbsent,settingsAllowlisted:settingsSafe,
+    onlyAllowlistedFields:projectionSafe,rowMetadataAbsent,
     counts:{services:data.services.length,courses:data.courses.length,events:data.events.length,faq:data.faq.length,pages:data.pages.length,settings:data.settings.length,dailyContent:data.dailyContent.length,bookingContent:data.bookingContent.length},
     noWritesPerformed:true};
   console.log(JSON.stringify(result,null,2)); return result;
