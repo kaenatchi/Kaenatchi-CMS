@@ -338,27 +338,34 @@ function getPublicMiniAppRows_(sheetName) {
  * Keep this allowlist aligned with cmsSetting() in the Main Mini App.
  */
 function getPublicMiniAppSettings_() {
-  const publicKeyFragments = [
-    'hours', 'ساعات',
-    'telegram', 'تلگرام',
-    'whatsapp', 'واتساپ', 'واتس اپ',
-    'instagram', 'اینستاگرام',
-    'channel', 'کانال',
-    'booking_card_number', 'شماره کارت', 'کارت بانکی',
-    'booking_bank_name', 'نام بانک', 'بانک',
-    'booking_card_holder', 'صاحب کارت', 'نام صاحب کارت', 'بنام', 'بنـام',
-    'booking_payment_text', 'توضیح پرداخت', 'متن پرداخت'
-  ];
   const rows = getPublicMiniAppRows_('Settings');
   return rows.filter(function(row) {
-    const key = String(row['کلید'] || row['key'] || row['نام'] || row['name'] || '')
-      .trim().toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک');
-    return publicKeyFragments.some(function(fragment) {
-      const normalized = String(fragment).trim().toLowerCase()
-        .replace(/ي/g, 'ی').replace(/ك/g, 'ک');
-      return key.indexOf(normalized) >= 0;
-    });
+    const key = String(row['کلید'] || row['key'] || row['نام'] || row['name'] || '');
+    return isPublicMiniAppSettingKey_(key);
   });
+}
+
+/**
+ * Exact allowlist avoids accidentally publishing secrets whose names merely
+ * contain words such as "telegram", "bank", or "hours".
+ */
+function isPublicMiniAppSettingKey_(rawKey) {
+  const key = String(rawKey || '').trim().toLowerCase()
+    .replace(/ي/g, 'ی').replace(/ك/g, 'ک')
+    .replace(/[\s_-]+/g, '');
+  const allowed = [
+    'hours','businesshours','hoursofoperation','ساعات','ساعاتکاری',
+    'telegram','telegramurl','telegramlink','تلگرام','لینکتلگرام',
+    'whatsapp','whatsappurl','whatsapplink','واتساپ','واتس‌اپ','لینکواتساپ',
+    'instagram','instagramurl','instagramlink','اینستاگرام','لینکاینستاگرام',
+    'channel','telegramchannel','telegramchannelurl','telegramchannelink',
+    'کانال','لینککانال','کانالتلگرام',
+    'bookingcardnumber','شمارهکارت','کارتبانکی',
+    'bookingbankname','نامبانک',
+    'bookingcardholder','صاحبکارت','نامصاحبکارت','بنام','بنـام',
+    'bookingpaymenttext','توضیحپرداخت','متنپرداخت'
+  ];
+  return allowed.indexOf(key) >= 0;
 }
 
 function getActiveRows_(rows) {
@@ -388,18 +395,9 @@ function testMiniAppDataSafety() {
   });
   const onlyExpectedKeys = JSON.stringify(actualKeys) === JSON.stringify(expectedSorted);
   const settingKeysAllowed = data.settings.every(function(row) {
-    const key = String(row['کلید'] || row['key'] || row['نام'] || row['name'] || '')
-      .trim().toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک');
-    const fragments = [
-      'hours','ساعات','telegram','تلگرام','whatsapp','واتساپ','واتس اپ',
-      'instagram','اینستاگرام','channel','کانال','booking_card_number',
-      'شماره کارت','کارت بانکی','booking_bank_name','نام بانک','بانک',
-      'booking_card_holder','صاحب کارت','نام صاحب کارت','بنام','بنـام',
-      'booking_payment_text','توضیح پرداخت','متن پرداخت'
-    ];
-    return fragments.some(function(fragment) {
-      return key.indexOf(String(fragment).toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک')) >= 0;
-    });
+    return isPublicMiniAppSettingKey_(
+      row['کلید'] || row['key'] || row['نام'] || row['name'] || ''
+    );
   });
   const result = {
     ok: onlyExpectedKeys && privateKeysAbsent && settingKeysAllowed,
