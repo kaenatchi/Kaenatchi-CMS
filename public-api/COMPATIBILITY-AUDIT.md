@@ -1,6 +1,6 @@
 # Public API / Main Mini App compatibility audit
 
-Date: 2026-10-10
+Date: 2026-10-11
 Branch: `security/public-api-project-prep`
 Scope: source-level comparison only. No live spreadsheet rows, headers, Apps Script execution, deployment, or endpoint switch was performed.
 
@@ -35,7 +35,7 @@ The new scaffold returns exactly these properties. It does not return the privat
 ## Behavior checks from source
 
 - The existing CMS endpoint filters public content rows using the Persian `فعال` field and recognized active values: `بله`, `فعال`, `true`, `1`, `yes`. The new scaffold now applies the same rule to the same public content collections.
-- The Mini App also filters active rows client-side; this redundant filtering is preserved.
+- The Mini App also filters active rows client-side. Its helper treats blank status as active, but the existing CMS endpoint filters server-side first and excludes blank status. The scaffold mirrors the server-side rule, so this preserves the existing endpoint's observable behavior.
 - Booking content is sorted by numeric `ترتیب` ascending, matching the existing CMS endpoint.
 - Daily content keeps its original field names; date-window and placement logic remains in the Mini App.
 - Public projection omits the internal `_row` metadata and does not include private collections.
