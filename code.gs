@@ -99,7 +99,8 @@ function getCMSData() {
     bookingSettings:settingsSheet?getAllData_(settingsSheet.getName()):{headers:[],rows:[]},
     bookings:getAllData_('Bookings'),customers:getAllData_('Customers'),payments:getAllData_('Payments'),
     schedule:getAllData_('Schedule'),blockedDates:getAllData_('BlockedDates'),blockedSlots:getAllData_('BlockedSlots'),
-    bookingLogs:getAllData_('BookingLogs')
+    bookingLogs:getAllData_('BookingLogs'),
+    therapyRequests:getSpreadsheet_().getSheetByName('TherapyRequests') ? getAllData_('TherapyRequests') : {headers:[],rows:[]}
   };
 }
 
