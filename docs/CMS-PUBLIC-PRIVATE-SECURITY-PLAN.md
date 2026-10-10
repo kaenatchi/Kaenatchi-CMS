@@ -50,3 +50,18 @@ Do not implement an access-setting flip on the current deployment. First determi
 
 ## Release gate
 No merge, deployment, production URL switch, access-setting change, Worker change, or data migration is authorized by this document. The current deployed system remains unchanged until the owner explicitly approves a reviewed implementation.
+
+
+## Branch implementation checkpoint — public reader draft
+
+On 2026-10-10, branch-only changes were made to `code.gs`:
+- `getMiniAppData()` now reads the public content sheets directly instead of calling `getCMSData()`.
+- The public reader does not provision sheets or modify headers.
+- `Settings` is filtered through an exact key allowlist intended for Mini App contact, hours, channel and payment-display values.
+- `testMiniAppDataSafety()` reports top-level shape, absence of private collection keys, setting-key allowlist status, and collection counts; it logs no row contents.
+
+Important limits:
+- This is a source-level draft only. The diagnostic has not been run against the real spreadsheet in Apps Script, so the allowlist and payload compatibility remain unverified.
+- The current public deployment still serves the CMS HTML by default, and global server functions still require a complete server-side authorization review. This change alone does **not** make the admin surface private.
+- Do not deploy this branch or change the live access setting yet.
+- Before release, test all expected public settings against actual key names, compare the public JSON shape with the Mini App's needs, and implement a separately authenticated admin surface with server-side guards for every read/write function.
