@@ -59,9 +59,10 @@ function getPublicSettings_() {
   );
 }
 function isPubliclyActive_(row) {
-  const raw=firstValue_(row,['فعال','active','status']);
-  if (!raw) return true; // Match Main Mini App's behavior when no active field exists.
-  return ['بله','فعال','true','1','yes'].indexOf(raw.trim().toLowerCase())>=0;
+  // Preserve the current branch's getActiveRows_ contract: only an explicit
+  // recognized value in the Persian "فعال" column is published.
+  const raw=String(row['فعال'] || '').trim().toLowerCase();
+  return ['بله','فعال','true','1','yes'].indexOf(raw)>=0;
 }
 function firstValue_(row,aliases) {
   const normalized={};
