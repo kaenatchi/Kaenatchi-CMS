@@ -45,6 +45,24 @@ Suggested fields: RegistrationID, IdempotencyKey, CreatedAt, ItemType, ItemID, I
 Add a CMS section named «درخواست‌ها و ثبت‌نام‌ها» with separate filters for Therapy requests, Course registrations and Event registrations. Keep record types distinct. Show status, created date, item and contact details only to authorized admins. Review/status changes must go through validated backend functions, not direct browser sheet edits.
 Course/Event editor additions: per-item registration mode, capacity, payment requirement and price (reuse existing field), and optional registration window. Old records must retain legacy behavior until an admin explicitly selects a mode.
 
+## CMS security gate and staged UI
+
+The unified CMS section must have three independent views:
+- Therapy requests
+- Course registrations
+- Event registrations
+
+Each view should support status filtering, search by request/registration code, created-date sorting, and a detail view. Therapy intake answers are especially sensitive: list rows should show only the request code, service type, date and status by default. Full answers and contact details belong only in an explicitly opened detail view for an authenticated administrator. Telegram notifications must remain minimized and must not contain intake answers or contact details.
+
+**Do not connect these views to the existing generic `getCMSData()` response.** That response currently loads broad CMS data and may include customer/booking/payment records. Do not add `TherapyRequests` or `Registrations` to that generic payload.
+
+Before the UI reads or changes any request/registration data:
+1. Verify the deployed Apps Script web app's actual “Who has access” setting and deployment identity; source code alone cannot establish this.
+2. Add server-side authorization to every admin read/review endpoint. Hiding buttons or tabs in the browser is not authorization.
+3. Return only fields needed for each view; validate request IDs, status transitions and review notes server-side.
+4. Add audit entries for review/status changes, and keep customer free text out of Telegram.
+5. If authorization cannot be verified, keep the CMS section as a non-data-loading placeholder. Do not expose PII as a shortcut.
+
 ## Implementation gates
 1. Inventory actual sheet headers and deployed Apps Script versions/URLs.
 2. Implement backend create/read/review actions with authorization, validation, idempotency, locking, capacity checks and audit logging.
