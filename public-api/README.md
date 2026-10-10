@@ -24,7 +24,7 @@ This scaffold is **not production-ready until all blockers below are cleared**:
 
 ## Important compatibility note
 
-The Main Mini App applies its own `cmsActive` behavior: a missing/blank active field is treated as active, and recognized values such as `بله`, `فعال`, `true`, `1`, and `yes` are active. The scaffold therefore returns projected public rows without server-side active filtering, so the Mini App retains its existing behavior. The current CMS branch helper filters blank values differently; this difference is intentional for compatibility with the consumer. Confirm actual live sheet values before release.
+The Main Mini App's client-side `cmsActive` helper treats a missing/blank active field as active. However, the existing CMS server endpoint calls `getActiveRows_` before returning public content and only publishes rows whose `فعال` value is one of `بله`, `فعال`, `true`, `1`, or `yes`. This scaffold mirrors that server-side behavior with `getPublicActiveRows_`, so blank-status rows are excluded before they reach the Mini App. This matches the current CMS endpoint's observable behavior, but live row values and counts still need verification before release.
 
 ## Protected scope
 
