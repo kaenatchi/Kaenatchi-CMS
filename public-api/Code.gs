@@ -54,8 +54,8 @@ function getPublicRows_(name) {
   const indexes=[];
   headers.forEach((h,i)=>{if(allowed.has(normalizeHeader_(h)))indexes.push(i);});
   if (!indexes.length) return [];
-  // Preserve original row objects' public column names. The Mini App owns
-  // active/inactive filtering via cmsActive(), including its blank-status behavior.
+  // Preserve original public column names while projecting only allowlisted fields.
+  // getPublicActiveRows_ applies the server-side active rule used by the current CMS API.
   return sheet.getRange(2,1,nr-1,nc).getDisplayValues().map(row=>{
     const obj={};
     indexes.forEach(i=>{if(headers[i] && headers[i].trim())obj[headers[i]]=row[i];});
