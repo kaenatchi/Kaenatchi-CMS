@@ -297,18 +297,144 @@ function getDashboardStats() {
   const data=getCMSData();
   return {services:data.services.rows.length,courses:data.courses.rows.length,events:data.events.rows.length,faq:data.faq.rows.length,pages:data.pages.rows.length,settings:data.settings.rows.length};
 }
+/**
+ * Public Mini App reader.
+ * IMPORTANT: This endpoint must never call getCMSData(), because that loader
+ * also reads bookings, customers, payments, schedules, closures and logs.
+ * This function is intentionally read-only and only reads public content sheets.
+ */
 function getMiniAppData() {
-  const data=getCMSData();
-  return {success:true,services:getActiveRows_(data.services.rows),courses:getActiveRows_(data.courses.rows),events:getActiveRows_(data.events.rows),faq:getActiveRows_(data.faq.rows),pages:getActiveRows_(data.pages.rows),settings:data.settings.rows,dailyContent:getActiveRows_(data.dailyContent.rows),bookingContent:getActiveRows_(data.bookingContent.rows).sort(function(a,b){return (Number(a['ترتیب'])||0)-(Number(b['ترتیب'])||0);})};
+  const settingsRows = getPublicMiniAppSettings_();
+  const bookingRows = getPublicMiniAppRows_('BookingContent');
+  bookingRows.sort(function(a,b) {
+    return (Number(a['ترتیب'])||0)-(Number(b['ترتیب'])||0);
+  });
+  return {
+    success: true,
+    services: getActiveRows_(getPublicMiniAppRows_('Services')),
+    courses: getActiveRows_(getPublicMiniAppRows_('Courses')),
+    events: getActiveRows_(getPublicMiniAppRows_('Events')),
+    faq: getActiveRows_(getPublicMiniAppRows_('FAQ')),
+    pages: getActiveRows_(getPublicMiniAppRows_('Pages')),
+    settings: settingsRows,
+    dailyContent: getActiveRows_(getPublicMiniAppRows_('DailyContent')),
+    bookingContent: getActiveRows_(bookingRows)
+  };
 }
+
+/**
+ * Read only a named public-content sheet. Missing optional content sheets
+ * return an empty list; this reader never creates sheets or changes headers.
+ */
+function getPublicMiniAppRows_(sheetName) {
+  const sheet = getSpreadsheet_().getSheetByName(sheetName);
+  if (!sheet) return [];
+  return getAllData_(sheetName).rows;
+}
+
+/**
+ * Settings are not all public: payment/contact presentation values are used
+ * by the public Mini App, but unrelated settings must not be exposed.
+ * Keep this allowlist aligned with cmsSetting() in the Main Mini App.
+ */
+function getPublicMiniAppSettings_() {
+  const publicKeyFragments = [
+    'hours', 'ساعات',
+    'telegram', 'تلگرام',
+    'whatsapp', 'واتساپ', 'واتس اپ',
+    'instagram', 'اینستاگرام',
+    'channel', 'کانال',
+    'booking_card_number', 'شماره کارت', 'کارت بانکی',
+    'booking_bank_name', 'نام بانک', 'بانک',
+    'booking_card_holder', 'صاحب کارت', 'نام صاحب کارت', 'بنام', 'بنـام',
+    'booking_payment_text', 'توضیح پرداخت', 'متن پرداخت'
+  ];
+  const rows = getPublicMiniAppRows_('Settings');
+  return rows.filter(function(row) {
+    const key = String(row['کلید'] || row['key'] || row['نام'] || row['name'] || '')
+      .trim().toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+    return publicKeyFragments.some(function(fragment) {
+      const normalized = String(fragment).trim().toLowerCase()
+        .replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+      return key.indexOf(normalized) >= 0;
+    });
+  });
+}
+
 function getActiveRows_(rows) {
   return rows.filter(function(row){
     const value=String(row['فعال']||'').trim().toLowerCase();
     return value==='بله'||value==='فعال'||value==='true'||value==='1'||value==='yes';
   });
 }
+
+/**
+ * Safe diagnostic: logs only counts and structural checks, never row contents.
+ */
+function testMiniAppDataSafety() {
+  const data = getMiniAppData();
+  const expectedKeys = [
+    'success','services','courses','events','faq','pages',
+    'settings','dailyContent','bookingContent'
+  ];
+  const actualKeys = Object.keys(data).sort();
+  const expectedSorted = expectedKeys.slice().sort();
+  const privateKeys = [
+    'bookings','customers','payments','schedule','blockedDates',
+    'blockedSlots','bookingLogs','bookingSettings'
+  ];
+  const privateKeysAbsent = privateKeys.every(function(key) {
+    return !Object.prototype.hasOwnProperty.call(data, key);
+  });
+  const onlyExpectedKeys = JSON.stringify(actualKeys) === JSON.stringify(expectedSorted);
+  const settingKeysAllowed = data.settings.every(function(row) {
+    const key = String(row['کلید'] || row['key'] || row['نام'] || row['name'] || '')
+      .trim().toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+    const fragments = [
+      'hours','ساعات','telegram','تلگرام','whatsapp','واتساپ','واتس اپ',
+      'instagram','اینستاگرام','channel','کانال','booking_card_number',
+      'شماره کارت','کارت بانکی','booking_bank_name','نام بانک','بانک',
+      'booking_card_holder','صاحب کارت','نام صاحب کارت','بنام','بنـام',
+      'booking_payment_text','توضیح پرداخت','متن پرداخت'
+    ];
+    return fragments.some(function(fragment) {
+      return key.indexOf(String(fragment).toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک')) >= 0;
+    });
+  });
+  const result = {
+    ok: onlyExpectedKeys && privateKeysAbsent && settingKeysAllowed,
+    test: 'PUBLIC MINI APP DATA SAFETY',
+    onlyExpectedTopLevelKeys: onlyExpectedKeys,
+    privateCollectionsAbsent: privateKeysAbsent,
+    settingsAllowlisted: settingKeysAllowed,
+    counts: {
+      services: data.services.length,
+      courses: data.courses.length,
+      events: data.events.length,
+      faq: data.faq.length,
+      pages: data.pages.length,
+      settings: data.settings.length,
+      dailyContent: data.dailyContent.length,
+      bookingContent: data.bookingContent.length
+    },
+    noWritesPerformed: true
+  };
+  console.log(JSON.stringify(result, null, 2));
+  return result;
+}
 function testMiniAppData() {
-  console.log(JSON.stringify(getMiniAppData(),null,2));
+  const data = getMiniAppData();
+  console.log(JSON.stringify({
+    success: data.success,
+    services: data.services.length,
+    courses: data.courses.length,
+    events: data.events.length,
+    faq: data.faq.length,
+    pages: data.pages.length,
+    settings: data.settings.length,
+    dailyContent: data.dailyContent.length,
+    bookingContent: data.bookingContent.length
+  }, null, 2));
 }
 
 
