@@ -24,7 +24,7 @@ This scaffold is **not production-ready until all blockers below are cleared**:
 
 ## Important compatibility note
 
-The existing Mini App filters rows using its own `cmsActive` function, while the current CMS branch's public endpoint filters using the Persian `فعال` field. The scaffold preserves the branch endpoint's active-only behavior to avoid silently changing the contract. Confirm the actual live sheet values before release.
+The Main Mini App applies its own `cmsActive` behavior: a missing/blank active field is treated as active, and recognized values such as `بله`, `فعال`, `true`, `1`, and `yes` are active. The scaffold therefore returns projected public rows without server-side active filtering, so the Mini App retains its existing behavior. The current CMS branch helper filters blank values differently; this difference is intentional for compatibility with the consumer. Confirm actual live sheet values before release.
 
 ## Protected scope
 
