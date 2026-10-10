@@ -65,3 +65,7 @@ Important limits:
 - The current public deployment still serves the CMS HTML by default, and global server functions still require a complete server-side authorization review. This change alone does **not** make the admin surface private.
 - Do not deploy this branch or change the live access setting yet.
 - Before release, test all expected public settings against actual key names, compare the public JSON shape with the Mini App's needs, and implement a separately authenticated admin surface with server-side guards for every read/write function.
+
+
+## Audit reference (2026-10-10)
+See [`CMS-SERVER-AUTHORIZATION-AUDIT.md`](./CMS-SERVER-AUTHORIZATION-AUDIT.md) for the callable-surface risks and Mini App settings compatibility review. The audit confirms this branch is not release-ready: the public endpoint currently shares the same Apps Script deployment surface as admin HTML/global functions, and the live spreadsheet keys/payload have not been tested. The next implementation must first establish a verified server-side identity model and separate public/admin deployment surfaces. No merge or deployment is authorized.
