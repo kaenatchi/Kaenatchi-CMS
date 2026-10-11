@@ -2,9 +2,9 @@
 
 Date: 2026-10-11
 Branch: `security/public-api-project-prep`
-Scope: source-level comparison only. No live spreadsheet rows, headers, Apps Script execution, deployment, or endpoint switch was performed.
+Scope: source review plus a successful read-only schema diagnostic in a separate temporary Apps Script project. No live endpoint/deployment change, no spreadsheet writes, and no private row values were read.
 
-## Consumer contract found in `src/App.tsx`
+## Main Mini App consumer contract
 
 The Main Mini App expects these top-level JSON properties:
 - `success`
@@ -17,39 +17,50 @@ The Main Mini App expects these top-level JSON properties:
 - `dailyContent`
 - `bookingContent`
 
-The new scaffold returns exactly these properties. It does not return the private collections used by the CMS admin or booking backend.
+The staging scaffold returns exactly these properties and excludes private collections used by the CMS admin and booking backend.
 
-## Field compatibility matrix
+## Confirmed live spreadsheet schema (headers only)
 
-| Collection | Fields consumed by Mini App | Projection status |
-| --- | --- | --- |
-| Services | ID/slug, service title, category, description, price, duration, active flag | Included in public field allowlist |
-| Courses | ID/slug, course title, description, active flag | Included |
-| Events | ID/slug, event title, description, active flag | Included |
-| FAQ | Question/title, answer/text/description, category/group, active flag | Included; FAQ aliases added during audit |
-| Pages | Page title/name, key/slug, text/description/answer, active flag | Included |
-| Settings | Key/name plus value/text/link/url for hours, Telegram, WhatsApp, Instagram, channel and booking payment display | Field projection included; exact live key names still need verification |
-| DailyContent | ID, title, text/content/description/short summary, image URL, category, active flag, Jalali start/end, order, display placement | Included |
-| BookingContent | Key, title, section, content/text/description, image URL, order, active flag | Included |
+The read-only diagnostic successfully identified the spreadsheet title and the following expected public-content headers:
+- `Services`: فعال, نام خدمت, دسته, توضیح کوتاه, توضیحات کامل, قیمت, تصویر, ترتیب
+- `Courses`: فعال, نام دوره, توضیح کوتاه, توضیحات کامل, سرفصل‌ها, مدت, هزینه, تصویر
+- `Events`: فعال, نام ایونت, توضیح کوتاه, توضیحات کامل, تاریخ, ساعت, نحوه برگزاری, ظرفیت, هزینه
+- `FAQ`: فعال, سؤال, پاسخ, دسته, ترتیب
+- `Pages`: فعال, نام صفحه, عنوان, متن, تصویر
+- `Settings`: کلید, مقدار, توضیحات
+- `DailyContent`: شناسه, عنوان, متن, لینک تصویر, دسته, فعال, تاریخ شروع, تاریخ پایان, ترتیب, محل نمایش
+- `BookingContent`: کلید, عنوان, بخش, محتوا, لینک تصویر, ترتیب, فعال
 
-## Behavior checks from source
+It also confirmed the presence and headers of private/booking-related tabs (Bookings, Customers, Schedule, BlockedDates, BlockedSlots, Payments, BookingSettings, BookingLogs). Their row contents were not read. The expected misspelled legacy tab `BookingSetings` does not exist; `BookingSettings` does.
 
-- The existing CMS endpoint filters public content rows using the Persian `فعال` field and recognized active values: `بله`, `فعال`, `true`, `1`, `yes`. The new scaffold now applies the same rule to the same public content collections.
-- The Mini App also filters active rows client-side. Its helper treats blank status as active, but the existing CMS endpoint filters server-side first and excludes blank status. The scaffold mirrors the server-side rule, so this preserves the existing endpoint's observable behavior.
-- Booking content is sorted by numeric `ترتیب` ascending, matching the existing CMS endpoint.
-- Daily content keeps its original field names; date-window and placement logic remains in the Mini App.
-- Public projection omits the internal `_row` metadata and does not include private collections.
-- The Settings filter uses exact normalized keys, not substring matching, to avoid exposing similarly named secrets. This is intentionally stricter than the Mini App's substring lookup.
+### Settings key names confirmed
 
-## Release blockers — not yet proven
+The diagnostic read only the Settings key/name column and found:
+- `booking_card_number`
+- `booking_bank_name`
+- `booking_card_holder`
+- `booking_payment_text`
 
-1. **Live header rows are not visible through the repository.** GitHub source cannot establish the actual current spreadsheet headers or values.
-2. **The current Apps Script endpoint could not be retrieved through the available read-only web inspection.** Therefore no live JSON snapshot or row counts are claimed.
-3. **Settings key compatibility remains unverified.** Compare each actual public key with `isPublicSettingKey_`; add only individually confirmed public keys.
-4. **No runtime test has been run in Apps Script.** The scaffold's `testPublicPayloadSafety()` must be run only after copying it into a separate staging project bound to an approved test/read-only setup.
-5. **Admin separation is not implemented yet.** `private-admin/README.md` is a plan, not a functioning private deployment. A verified server-side identity policy and per-function authorization are still required.
-6. The code does not currently add the courses/events registration metadata columns because the inspected Mini App consumer does not read those fields.
+No corresponding setting values were read by the diagnostic. The staging public API allowlist includes these exact normalized keys because the Mini App uses payment display information. No other Settings keys are permitted by the public API allowlist.
+
+## Staging implementation behavior
+
+- The staging API uses the Advanced Google Sheets service and declares only the `spreadsheets.readonly` OAuth scope. The diagnostic successfully ran with that scope.
+- Public content readers use Sheets API values reads and retrieve only explicitly allowlisted columns rather than whole rows.
+- Settings handling first reads only the key column, then reads allowlisted fields only for rows whose keys match the exact public allowlist. It does not fetch values for other Settings keys.
+- Content rows are published only when the Persian `فعال` field explicitly contains a recognized active value: `بله`, `فعال`, `true`, `1`, or `yes`. This matches the current CMS endpoint's server-side rule.
+- Booking content is sorted by numeric `ترتیب` ascending.
+- The public payload omits internal `_row` metadata and private collections.
+- The new diagnostic is schema-only; it does not read customer, booking, payment, receipt, VIP-token, or other private row contents, and it does not write or deploy anything.
+
+## Remaining release blockers
+
+1. **No public API runtime test yet.** The staging public API code itself has not been run against the real sheet in a separate test project. Only the schema diagnostic has run.
+2. **Main Mini App contract still needs a payload test.** Verify all eight collections, expected field aliases, active filtering, and settings rendering with the staging payload before any URL switch.
+3. **Admin separation is not implemented.** `private-admin/README.md` is a plan, not a functioning private deployment. A verified server-side identity policy and per-function authorization are still required.
+4. **No deployment or endpoint switch has been authorized.** The live Mini App still uses its existing endpoint; no endpoint URL was changed.
+5. Course/event enrollment metadata is not added because the inspected Mini App consumer does not currently read those fields. If product requirements change, assess separately.
 
 ## Release gate
 
-Do not deploy this scaffold, switch `CMS_API_URL`, alter Version 46, change its access setting, merge to `main`, or change the Worker, booking, VIP, payments, Jalali logic, or Schedule until all blockers are cleared and the user explicitly approves.
+Do not deploy this scaffold, switch `CMS_API_URL`, alter Version 46 or its access setting, merge to `main`, or change the Worker, booking, VIP, payments, Jalali logic, or Schedule until remaining blockers are cleared and the user explicitly approves.
