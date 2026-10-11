@@ -9,11 +9,11 @@ const PUBLIC_SHEETS = {
   settings:'Settings', dailyContent:'DailyContent', bookingContent:'BookingContent'
 };
 const PUBLIC_FIELDS = {
-  services:['شناسه','id','slug','نام خدمت','عنوان','نام','title','دسته','دسته‌بندی','category','توضیحات کامل','توضیح کوتاه','توضیحات','توضیح','description','text','قیمت','هزینه','price','مدت','مدت زمان','duration','فعال','active','status'],
-  courses:['شناسه','id','slug','نام دوره','عنوان','نام','title','توضیحات کامل','توضیحات','توضیح کوتاه','توضیح','متن','description','text','قیمت','هزینه','price','base price','مدت','مدت زمان','duration','فعال','active','status'],
-  events:['شناسه','id','slug','نام ایونت','عنوان','نام','title','توضیحات کامل','توضیحات','توضیح کوتاه','توضیح','متن','description','text','قیمت','هزینه','price','base price','مدت','مدت زمان','duration','فعال','active','status'],
-  faq:['شناسه','id','slug','سؤال','سوال','پرسش','question','عنوان','نام','title','پاسخ','answer','توضیحات','توضیحات کامل','توضیح کوتاه','توضیح','متن','description','text','دسته‌بندی','دسته','category','گروه','فعال','active','status'],
-  pages:['شناسه','id','slug','کلید','key','نام صفحه','عنوان','نام','title','متن','توضیحات کامل','توضیحات','پاسخ','text','description','فعال','active','status'],
+  services:['شناسه','id','slug','نام خدمت','عنوان','نام','title','دسته','دسته‌بندی','category','توضیحات کامل','توضیح کوتاه','توضیحات','توضیح','description','text','قیمت','هزینه','price','مدت','مدت زمان','duration','تصویر','image','ترتیب','order','فعال','active','status'],
+  courses:['شناسه','id','slug','نام دوره','عنوان','نام','title','توضیحات کامل','توضیحات','توضیح کوتاه','توضیح','متن','description','text','سرفصل‌ها','سرفصل ها','هزینه','قیمت','price','base price','مدت','مدت زمان','duration','تصویر','image','فعال','active','status'],
+  events:['شناسه','id','slug','نام ایونت','عنوان','نام','title','توضیحات کامل','توضیحات','توضیح کوتاه','توضیح','متن','description','text','تاریخ','date','ساعت','time','نحوه برگزاری','نحوه‌برگزاری','ظرفیت','capacity','هزینه','قیمت','price','base price','فعال','active','status'],
+  faq:['شناسه','id','slug','سؤال','سوال','پرسش','question','عنوان','نام','title','پاسخ','answer','توضیحات','توضیحات کامل','توضیح کوتاه','توضیح','متن','description','text','دسته‌بندی','دسته','category','گروه','ترتیب','order','فعال','active','status'],
+  pages:['شناسه','id','slug','کلید','key','نام صفحه','عنوان','نام','title','متن','توضیحات کامل','توضیحات','پاسخ','text','description','تصویر','image','فعال','active','status'],
   dailyContent:['شناسه','id','عنوان','title','متن','محتوا','توضیحات','text','content','لینک تصویر','تصویر','image url','image','دسته','دسته‌بندی','category','فعال','active','status','تاریخ شروع','شروع','start date','تاریخ پایان','پایان','end date','ترتیب','order','شرح کوتاه','خلاصه','محل نمایش','جایگاه نمایش','placement','display in'],
   bookingContent:['کلید','key','عنوان','title','بخش','section','محتوا','متن','توضیحات','content','text','لینک تصویر','تصویر','image url','image','ترتیب','order','فعال','active','status'],
   settings:['کلید','key','نام','name','مقدار','value','متن','text','لینک','url']
