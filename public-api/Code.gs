@@ -42,38 +42,141 @@ function getMiniAppData_() {
     bookingContent:bookingContent
   };
 }
+// Cache only sheet metadata for this execution. No spreadsheet values are cached here.
+var PUBLIC_SHEET_NAMES_CACHE = null;
+
+function getPublicSheetNames_() {
+  if (PUBLIC_SHEET_NAMES_CACHE) return PUBLIC_SHEET_NAMES_CACHE;
+  const metadata = Sheets.Spreadsheets.get(PUBLIC_CMS_SPREADSHEET_ID, {
+    fields: 'sheets(properties(title))'
+  });
+  PUBLIC_SHEET_NAMES_CACHE = {};
+  (metadata.sheets || []).forEach(function(item) {
+    const title = item.properties && item.properties.title;
+    if (title) PUBLIC_SHEET_NAMES_CACHE[title] = true;
+  });
+  return PUBLIC_SHEET_NAMES_CACHE;
+}
+
+function readPublicValues_(range) {
+  const quotedRange = quotePublicRange_(range);
+  const result = Sheets.Spreadsheets.Values.get(
+    PUBLIC_CMS_SPREADSHEET_ID,
+    quotedRange,
+    { majorDimension: 'ROWS' }
+  );
+  return result.values || [];
+}
+
+function quotePublicRange_(range) {
+  const separator = range.indexOf('!');
+  const sheetName = range.substring(0, separator);
+  const cellRange = range.substring(separator + 1);
+  return "'" + sheetName.replace(/'/g, "''") + "'!" + cellRange;
+}
+
+function publicColumnLetter_(column) {
+  let result = '';
+  while (column > 0) {
+    const remainder = (column - 1) % 26;
+    result = String.fromCharCode(65 + remainder) + result;
+    column = Math.floor((column - 1) / 26);
+  }
+  return result;
+}
+
 function getPublicRows_(name) {
-  const sheetName=PUBLIC_SHEETS[name], fields=PUBLIC_FIELDS[name];
+  if (name === 'settings') throw new Error('Use the key-filtered Settings reader');
+  const sheetName = PUBLIC_SHEETS[name], fields = PUBLIC_FIELDS[name];
   if (!sheetName || !fields) throw new Error('Unknown public collection');
-  const sheet=SpreadsheetApp.openById(PUBLIC_CMS_SPREADSHEET_ID).getSheetByName(sheetName);
-  if (!sheet) return [];
-  const nr=sheet.getLastRow(), nc=sheet.getLastColumn();
-  if (nr<2 || nc<1) return [];
-  const headers=sheet.getRange(1,1,1,nc).getDisplayValues()[0].map(String);
-  const allowed=new Set(fields.map(normalizeHeader_));
-  const indexes=[];
-  headers.forEach((h,i)=>{if(allowed.has(normalizeHeader_(h)))indexes.push(i);});
+  if (!getPublicSheetNames_()[sheetName]) return [];
+
+  const headerRows = readPublicValues_(sheetName + '!1:1');
+  const headers = headerRows.length ? headerRows[0].map(function(value) {
+    return String(value == null ? '' : value);
+  }) : [];
+  if (!headers.length) return [];
+
+  const allowed = new Set(fields.map(normalizeHeader_));
+  const indexes = [];
+  headers.forEach(function(header, index) {
+    if (header && allowed.has(normalizeHeader_(header))) indexes.push(index);
+  });
   if (!indexes.length) return [];
-  // Preserve original public column names while projecting only allowlisted fields.
-  // getPublicActiveRows_ applies the server-side active rule used by the current CMS API.
-  return sheet.getRange(2,1,nr-1,nc).getDisplayValues().map(row=>{
-    const obj={};
-    indexes.forEach(i=>{if(headers[i] && headers[i].trim())obj[headers[i]]=row[i];});
+
+  // Read only explicitly allowlisted columns, never entire sheet rows.
+  const columns = indexes.map(function(index) {
+    return readPublicValues_(sheetName + '!' + publicColumnLetter_(index + 1) + '2:' +
+      publicColumnLetter_(index + 1)).map(function(row) {
+        return row.length ? String(row[0] == null ? '' : row[0]) : '';
+      });
+  });
+  const rowCount = columns.reduce(function(maximum, values) {
+    return Math.max(maximum, values.length);
+  }, 0);
+  const result = [];
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const obj = {};
+    indexes.forEach(function(columnIndex, projectedIndex) {
+      const header = headers[columnIndex];
+      if (header && header.trim()) obj[header] = columns[projectedIndex][rowIndex] || '';
+    });
+    result.push(obj);
+  }
+  return result;
+}
+
+function getPublicActiveRows_(name) {
+  // Match the current CMS endpoint: publish only when Persian "فعال" contains
+  // a recognized active value.
+  return getPublicRows_(name).filter(function(row) {
+    const value = String(row['فعال'] || '').trim().toLowerCase();
+    return value === 'بله' || value === 'فعال' || value === 'true' ||
+      value === '1' || value === 'yes';
+  });
+}
+
+function getPublicSettings_() {
+  const sheetName = PUBLIC_SHEETS.settings;
+  if (!getPublicSheetNames_()[sheetName]) return [];
+  const headerRows = readPublicValues_(sheetName + '!1:1');
+  const headers = headerRows.length ? headerRows[0].map(function(value) {
+    return String(value == null ? '' : value);
+  }) : [];
+  const keyAliases = ['کلید', 'key', 'نام', 'name'];
+  const keyIndex = headers.findIndex(function(header) {
+    return keyAliases.map(normalizeHeader_).indexOf(normalizeHeader_(header)) >= 0;
+  });
+  if (keyIndex < 0) return [];
+
+  // First read ONLY setting keys. Values of non-public keys are never fetched.
+  const keyColumn = publicColumnLetter_(keyIndex + 1);
+  const keys = readPublicValues_(sheetName + '!' + keyColumn + '2:' + keyColumn);
+  const publicRowIndexes = [];
+  keys.forEach(function(row, index) {
+    const key = String(row[0] == null ? '' : row[0]).trim();
+    if (key && isPublicSettingKey_(key)) publicRowIndexes.push(index + 2);
+  });
+  if (!publicRowIndexes.length) return [];
+
+  const allowed = new Set(PUBLIC_FIELDS.settings.map(normalizeHeader_));
+  const publicColumns = [];
+  headers.forEach(function(header, index) {
+    if (header && allowed.has(normalizeHeader_(header))) {
+      publicColumns.push({ index: index, header: header, letter: publicColumnLetter_(index + 1) });
+    }
+  });
+
+  // Fetch allowlisted fields only for individually approved public setting rows.
+  return publicRowIndexes.map(function(rowNumber) {
+    const obj = {};
+    publicColumns.forEach(function(column) {
+      const values = readPublicValues_(sheetName + '!' + column.letter + rowNumber);
+      const value = values.length && values[0].length ? String(values[0][0] == null ? '' : values[0][0]) : '';
+      obj[column.header] = value;
+    });
     return obj;
   });
-}
-function getPublicActiveRows_(name) {
-  // Match the current CMS endpoint: content rows are published only when the
-  // Persian "فعال" column explicitly contains a recognized active value.
-  return getPublicRows_(name).filter(row => {
-    const value=String(row['فعال']||'').trim().toLowerCase();
-    return value==='بله'||value==='فعال'||value==='true'||value==='1'||value==='yes';
-  });
-}
-function getPublicSettings_() {
-  return getPublicRows_('settings').filter(row=>
-    isPublicSettingKey_(firstValue_(row,['کلید','key','نام','name']))
-  );
 }
 function firstValue_(row,aliases) {
   const normalized={};
@@ -85,7 +188,7 @@ function firstValue_(row,aliases) {
   return '';
 }
 function normalizeHeader_(value) {
-  return String(value||'').trim().toLowerCase().replace(/ي/g,'ی').replace(/ى/g,'ی').replace(/ك/g,'ک').replace(/[\s_-]+/g,'');
+  return String(value||'').trim().toLowerCase().replace(/ي/g,'ی').replace(/ى/g,'ی').replace(/ك/g,'ک').replace(/[\\s_-]+/g,'');
 }
 /** Exact allowlist; confirm live Settings keys before deploying. */
 function isPublicSettingKey_(rawKey) {
