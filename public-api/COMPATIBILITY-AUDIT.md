@@ -43,6 +43,10 @@ The diagnostic read only the Settings key/name column and found:
 
 No corresponding setting values were read by the diagnostic. The staging public API allowlist includes these exact normalized keys because the Mini App uses payment display information. No other Settings keys are permitted by the public API allowlist.
 
+## Performance review update (2026-10-11)
+
+The staging reader was updated to use Google Sheets Values `batchGet` for allowlisted content columns and for individually approved public Settings cells. This removes the prior one-request-per-column and one-request-per-approved-cell pattern while preserving the field and Settings-key allowlists. The safety test now reports `elapsedMs` and `valuesBatchRequests`; those metrics still need to be collected by running the updated code in the separate temporary Apps Script project. No live deployment, Mini App URL, Worker, or main-branch file was changed.
+
 ## Staging implementation behavior
 
 - The staging API uses the Advanced Google Sheets service and declares only the `spreadsheets.readonly` OAuth scope. The diagnostic successfully ran with that scope.
