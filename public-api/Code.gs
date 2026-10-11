@@ -64,8 +64,11 @@ function readPublicValues_(range) {
 
 // Batch ranges belonging to the same logical read into one Sheets API request.
 // This reduces round trips without widening the public field allowlist.
+var PUBLIC_VALUES_BATCH_REQUESTS = 0;
+
 function readPublicValuesBatch_(ranges) {
   if (!ranges.length) return [];
+  PUBLIC_VALUES_BATCH_REQUESTS++;
   const quotedRanges = ranges.map(quotePublicRange_);
   const result = Sheets.Spreadsheets.Values.batchGet(
     PUBLIC_CMS_SPREADSHEET_ID,
@@ -234,6 +237,8 @@ function isPublicSettingKey_(rawKey) {
 }
 /** Structural/privacy test only; live headers and compatibility remain unverified. */
 function testPublicPayloadSafety() {
+  const startedAt = Date.now();
+  PUBLIC_VALUES_BATCH_REQUESTS = 0;
   const data=getMiniAppData_();
   const names=['services','courses','events','faq','pages','settings','dailyContent','bookingContent'];
   const expected=['success'].concat(names).sort();
@@ -251,6 +256,8 @@ function testPublicPayloadSafety() {
     expectedTopLevelKeysOnly:topKeys,privateCollectionsAbsent,settingsAllowlisted:settingsSafe,
     onlyAllowlistedFields:projectionSafe,rowMetadataAbsent,
     counts:{services:data.services.length,courses:data.courses.length,events:data.events.length,faq:data.faq.length,pages:data.pages.length,settings:data.settings.length,dailyContent:data.dailyContent.length,bookingContent:data.bookingContent.length},
+    valuesBatchRequests:PUBLIC_VALUES_BATCH_REQUESTS,
+    elapsedMs:Date.now()-startedAt,
     noWritesPerformed:true};
   console.log(JSON.stringify(result,null,2)); return result;
 }
