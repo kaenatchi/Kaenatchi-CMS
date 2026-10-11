@@ -59,13 +59,23 @@ function getPublicSheetNames_() {
 }
 
 function readPublicValues_(range) {
-  const quotedRange = quotePublicRange_(range);
-  const result = Sheets.Spreadsheets.Values.get(
+  return readPublicValuesBatch_([range])[0] || [];
+}
+
+// Batch ranges belonging to the same logical read into one Sheets API request.
+// This reduces round trips without widening the public field allowlist.
+function readPublicValuesBatch_(ranges) {
+  if (!ranges.length) return [];
+  const quotedRanges = ranges.map(quotePublicRange_);
+  const result = Sheets.Spreadsheets.Values.batchGet(
     PUBLIC_CMS_SPREADSHEET_ID,
-    quotedRange,
-    { majorDimension: 'ROWS' }
+    { ranges: quotedRanges, majorDimension: 'ROWS' }
   );
-  return result.values || [];
+  const valueRanges = result.valueRanges || [];
+  return quotedRanges.map(function(_, index) {
+    const item = valueRanges[index];
+    return item && item.values ? item.values : [];
+  });
 }
 
 function quotePublicRange_(range) {
@@ -105,11 +115,16 @@ function getPublicRows_(name) {
   if (!indexes.length) return [];
 
   // Read only explicitly allowlisted columns, never entire sheet rows.
-  const columns = indexes.map(function(index) {
-    return readPublicValues_(sheetName + '!' + publicColumnLetter_(index + 1) + '2:' +
-      publicColumnLetter_(index + 1)).map(function(row) {
-        return row.length ? String(row[0] == null ? '' : row[0]) : '';
-      });
+  // One batchGet replaces one API round trip per column.
+  const columnRanges = indexes.map(function(index) {
+    const letter = publicColumnLetter_(index + 1);
+    return sheetName + '!' + letter + '2:' + letter;
+  });
+  const columnValues = readPublicValuesBatch_(columnRanges);
+  const columns = columnValues.map(function(values) {
+    return values.map(function(row) {
+      return row.length ? String(row[0] == null ? '' : row[0]) : '';
+    });
   });
   const rowCount = columns.reduce(function(maximum, values) {
     return Math.max(maximum, values.length);
@@ -168,11 +183,23 @@ function getPublicSettings_() {
   });
 
   // Fetch allowlisted fields only for individually approved public setting rows.
-  return publicRowIndexes.map(function(rowNumber) {
-    const obj = {};
+  // Batch the approved cells together; no cells from non-public setting rows
+  // are included in this request.
+  const approvedCellRanges = [];
+  publicRowIndexes.forEach(function(rowNumber) {
     publicColumns.forEach(function(column) {
-      const values = readPublicValues_(sheetName + '!' + column.letter + rowNumber);
-      const value = values.length && values[0].length ? String(values[0][0] == null ? '' : values[0][0]) : '';
+      approvedCellRanges.push(sheetName + '!' + column.letter + rowNumber);
+    });
+  });
+  const approvedCellValues = readPublicValuesBatch_(approvedCellRanges);
+  return publicRowIndexes.map(function(rowNumber, rowIndex) {
+    const obj = {};
+    publicColumns.forEach(function(column, columnIndex) {
+      const valueIndex = rowIndex * publicColumns.length + columnIndex;
+      const values = approvedCellValues[valueIndex] || [];
+      const value = values.length && values[0].length
+        ? String(values[0][0] == null ? '' : values[0][0])
+        : '';
       obj[column.header] = value;
     });
     return obj;
