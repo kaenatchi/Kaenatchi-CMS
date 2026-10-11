@@ -1,13 +1,14 @@
 /**
  * READ-ONLY schema diagnostics for KaenatChi CMS.
  *
- * Use ONLY in a separate temporary Apps Script project after reviewing the
- * spreadsheet ID and granting the narrow read-only spreadsheet scope.
- * Do not paste this file into the live CMS project. Do not deploy as a Web App.
+ * Run only in a separate temporary Apps Script project. Never paste into the
+ * live CMS project and never deploy as a Web App.
  *
- * Output is limited to sheet names, headers, row counts, and Settings key names.
- * It never reads or logs customer rows, booking rows, payment values, receipts,
- * phone numbers, VIP tokens, setting values, or any other row contents.
+ * Uses the Advanced Google Sheets service with spreadsheets.readonly.
+ * It reads sheet metadata, header rows, and ONLY the key/name column in Settings.
+ * It does not read customer, booking, payment, receipt, VIP-token, or other
+ * private data rows. It intentionally does not report populated row counts:
+ * Sheets API grid row counts are capacity, not actual data row counts.
  */
 const DIAGNOSTIC_SPREADSHEET_ID = '1cf6SFL80xJ8YrBPlr_Fp9TYhkKGkhu2U45D2WTSyNz0';
 
@@ -19,45 +20,49 @@ const DIAGNOSTIC_SHEETS = [
 ];
 
 function runReadOnlyCmsSchemaDiagnostic() {
-  const ss = SpreadsheetApp.openById(DIAGNOSTIC_SPREADSHEET_ID);
+  const metadata = Sheets.Spreadsheets.get(DIAGNOSTIC_SPREADSHEET_ID, {
+    fields: 'spreadsheetId,properties(title),sheets(properties(sheetId,title))'
+  });
+  const actualSheets = metadata.sheets || [];
+  const actualNames = {};
+  actualSheets.forEach(function(item) {
+    if (item.properties && item.properties.title) {
+      actualNames[item.properties.title] = item.properties.sheetId;
+    }
+  });
+
   const report = {
     diagnostic: 'KaenatChi CMS schema-only audit',
     readOnlyIntent: true,
     noWritesPerformed: true,
     noDeploymentPerformed: true,
+    method: 'Google Sheets API Advanced Service; spreadsheets.readonly',
+    spreadsheetTitle: metadata.properties ? metadata.properties.title : null,
     sheets: []
   };
 
   DIAGNOSTIC_SHEETS.forEach(function(name) {
-    const sheet = ss.getSheetByName(name);
-    if (!sheet) {
+    if (!Object.prototype.hasOwnProperty.call(actualNames, name)) {
       report.sheets.push({ name: name, exists: false });
       return;
     }
 
-    const lastRow = sheet.getLastRow();
-    const lastColumn = sheet.getLastColumn();
-    const headers = lastColumn > 0
-      ? sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(String)
-      : [];
+    const headerRows = readValues_(name + '!1:1');
+    const headers = headerRows.length ? headerRows[0].map(function(v) {
+      return String(v == null ? '' : v);
+    }) : [];
+    const item = { name: name, exists: true, headers: headers };
 
-    const item = {
-      name: name,
-      exists: true,
-      dataRowCount: Math.max(0, lastRow - 1),
-      headers: headers
-    };
-
-    // Only for Settings: read the key/name column, never the value column.
-    if (name === 'Settings' && lastRow > 1 && headers.length) {
+    // Settings: retrieve only the recognized key/name column, never values.
+    if (name === 'Settings') {
       const keyIndex = findSettingsKeyColumn_(headers);
       if (keyIndex >= 0) {
+        const column = columnLetter_(keyIndex + 1);
+        const keyRows = readValues_(name + '!' + column + '2:' + column);
         item.settingKeyColumn = headers[keyIndex];
-        item.settingKeyNames = sheet
-          .getRange(2, keyIndex + 1, lastRow - 1, 1)
-          .getDisplayValues()
-          .map(function(row) { return String(row[0] || '').trim(); })
-          .filter(function(value) { return value !== ''; });
+        item.settingKeyNames = keyRows.map(function(row) {
+          return String(row[0] == null ? '' : row[0]).trim();
+        }).filter(function(value) { return value !== ''; });
       } else {
         item.settingKeyColumn = null;
         item.settingKeyNames = [];
@@ -72,12 +77,29 @@ function runReadOnlyCmsSchemaDiagnostic() {
   return report;
 }
 
+function readValues_(range) {
+  const quotedRange = quoteSheetRange_(range);
+  const result = Sheets.Spreadsheets.Values.get(
+    DIAGNOSTIC_SPREADSHEET_ID,
+    quotedRange,
+    { majorDimension: 'ROWS' }
+  );
+  return result.values || [];
+}
+
+function quoteSheetRange_(range) {
+  const separator = range.indexOf('!');
+  const sheetName = range.substring(0, separator);
+  const cellRange = range.substring(separator + 1);
+  return "'" + sheetName.replace(/'/g, "''") + "'!" + cellRange;
+}
+
 function findSettingsKeyColumn_(headers) {
   const aliases = ['کلید', 'key', 'نام', 'name'];
   const normalize = function(value) {
     return String(value || '').trim().toLowerCase()
       .replace(/ي/g, 'ی').replace(/ى/g, 'ی').replace(/ك/g, 'ک')
-      .replace(/[\\s_-]+/g, '');
+      .replace(/[\s_-]+/g, '');
   };
   const normalized = headers.map(normalize);
   for (let i = 0; i < aliases.length; i++) {
@@ -85,4 +107,14 @@ function findSettingsKeyColumn_(headers) {
     if (index >= 0) return index;
   }
   return -1;
+}
+
+function columnLetter_(column) {
+  let result = '';
+  while (column > 0) {
+    const remainder = (column - 1) % 26;
+    result = String.fromCharCode(65 + remainder) + result;
+    column = Math.floor((column - 1) / 26);
+  }
+  return result;
 }
