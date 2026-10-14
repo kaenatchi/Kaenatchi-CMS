@@ -28,20 +28,161 @@ function jsonOutput_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
 function getMiniAppData_() {
-  const bookingContent = getPublicActiveRows_('bookingContent');
-  bookingContent.sort((a,b) => (Number(a['ترتیب'])||0) - (Number(b['ترتیب'])||0));
+  return getPublicPayloadBatched_();
+}
+
+/*
+ * Fast read-only public payload builder.
+ * One metadata lookup + one header batch + one data-column batch +
+ * one settings-key read + one approved-settings-cell batch.
+ * This intentionally does not call the CMS admin getCMSData() function
+ * and never reads booking/customer/payment/schedule collections.
+ */
+function getPublicPayloadBatched_() {
+  const startedAt = Date.now();
+  const sheetNames = getPublicSheetNames_();
+  const collectionNames = ['services','courses','events','faq','pages','dailyContent','bookingContent'];
+  const allNames = collectionNames.concat(['settings']);
+  const headerRanges = allNames
+    .filter(function(name) { return !!sheetNames[PUBLIC_SHEETS[name]]; })
+    .map(function(name) { return PUBLIC_SHEETS[name] + '!1:1'; });
+  const headerValues = readPublicValuesBatch_(headerRanges);
+  const headersByName = {};
+  let headerCursor = 0;
+  allNames.forEach(function(name) {
+    if (!sheetNames[PUBLIC_SHEETS[name]]) {
+      headersByName[name] = [];
+      return;
+    }
+    const values = headerValues[headerCursor++] || [];
+    headersByName[name] = values.length ? values[0].map(function(value) {
+      return String(value == null ? '' : value);
+    }) : [];
+  });
+
+  const outputRows = {};
+  const columnDescriptors = [];
+  collectionNames.forEach(function(name) {
+    const headers = headersByName[name] || [];
+    const allowed = new Set(PUBLIC_FIELDS[name].map(normalizeHeader_));
+    const indexes = [];
+    headers.forEach(function(header, index) {
+      if (header && allowed.has(normalizeHeader_(header))) indexes.push(index);
+    });
+    outputRows[name] = [];
+    indexes.forEach(function(index) {
+      const letter = publicColumnLetter_(index + 1);
+      columnDescriptors.push({
+        name: name,
+        index: index,
+        header: headers[index],
+        range: PUBLIC_SHEETS[name] + '!' + letter + '2:'
+      });
+    });
+  });
+
+  const dataColumnValues = readPublicValuesBatch_(
+    columnDescriptors.map(function(item) { return item.range; })
+  );
+  const columnsByName = {};
+  columnDescriptors.forEach(function(item, index) {
+    if (!columnsByName[item.name]) columnsByName[item.name] = [];
+    columnsByName[item.name].push({
+      index: item.index,
+      header: item.header,
+      values: (dataColumnValues[index] || []).map(function(row) {
+        return row.length ? String(row[0] == null ? '' : row[0]) : '';
+      })
+    });
+  });
+
+  collectionNames.forEach(function(name) {
+    const columns = columnsByName[name] || [];
+    const rowCount = columns.reduce(function(maximum, column) {
+      return Math.max(maximum, column.values.length);
+    }, 0);
+    const rows = [];
+    for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+      const row = {};
+      columns.forEach(function(column) {
+        row[column.header] = column.values[rowIndex] || '';
+      });
+      rows.push(row);
+    }
+    outputRows[name] = rows.filter(function(row) {
+      const value = String(row['فعال'] || '').trim().toLowerCase();
+      return value === 'بله' || value === 'فعال' || value === 'true' ||
+        value === '1' || value === 'yes';
+    });
+  });
+
+  outputRows.settings = readPublicSettingsBatched_(
+    headersByName.settings,
+    !!sheetNames[PUBLIC_SHEETS.settings]
+  );
+  outputRows.bookingContent.sort(function(a,b) {
+    return (Number(a['ترتیب']) || 0) - (Number(b['ترتیب']) || 0);
+  });
+
   return {
-    success:true,
-    services:getPublicActiveRows_('services'),
-    courses:getPublicActiveRows_('courses'),
-    events:getPublicActiveRows_('events'),
-    faq:getPublicActiveRows_('faq'),
-    pages:getPublicActiveRows_('pages'),
-    settings:getPublicSettings_(),
-    dailyContent:getPublicActiveRows_('dailyContent'),
-    bookingContent:bookingContent
+    success: true,
+    services: outputRows.services,
+    courses: outputRows.courses,
+    events: outputRows.events,
+    faq: outputRows.faq,
+    pages: outputRows.pages,
+    settings: outputRows.settings,
+    dailyContent: outputRows.dailyContent,
+    bookingContent: outputRows.bookingContent
   };
 }
+
+function readPublicSettingsBatched_(headers, sheetExists) {
+  const sheetName = PUBLIC_SHEETS.settings;
+  if (!sheetExists || !headers.length) return [];
+  const keyAliases = ['کلید', 'key', 'نام', 'name'];
+  const keyIndex = headers.findIndex(function(header) {
+    return keyAliases.map(normalizeHeader_).indexOf(normalizeHeader_(header)) >= 0;
+  });
+  if (keyIndex < 0) return [];
+
+  const keyLetter = publicColumnLetter_(keyIndex + 1);
+  const keyRows = readPublicValuesBatch_([sheetName + '!' + keyLetter + '2:'])[0] || [];
+  const publicRows = [];
+  keyRows.forEach(function(row, index) {
+    const key = String(row[0] == null ? '' : row[0]).trim();
+    if (key && isPublicSettingKey_(key)) publicRows.push(index + 2);
+  });
+  if (!publicRows.length) return [];
+
+  const allowed = new Set(PUBLIC_FIELDS.settings.map(normalizeHeader_));
+  const publicColumns = [];
+  headers.forEach(function(header, index) {
+    if (header && allowed.has(normalizeHeader_(header))) {
+      publicColumns.push({header:header,letter:publicColumnLetter_(index + 1)});
+    }
+  });
+  if (!publicColumns.length) return [];
+
+  const ranges = [];
+  publicRows.forEach(function(rowNumber) {
+    publicColumns.forEach(function(column) {
+      ranges.push(sheetName + '!' + column.letter + rowNumber);
+    });
+  });
+  const values = readPublicValuesBatch_(ranges);
+  return publicRows.map(function(_, rowIndex) {
+    const row = {};
+    publicColumns.forEach(function(column, columnIndex) {
+      const cell = values[rowIndex * publicColumns.length + columnIndex] || [];
+      row[column.header] = cell.length && cell[0].length
+        ? String(cell[0][0] == null ? '' : cell[0][0])
+        : '';
+    });
+    return row;
+  });
+}
+
 // Cache only sheet metadata for this execution. No spreadsheet values are cached here.
 var PUBLIC_SHEET_NAMES_CACHE = null;
 
