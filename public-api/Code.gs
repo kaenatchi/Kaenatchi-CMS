@@ -361,20 +361,34 @@ function firstValue_(row,aliases) {
 function normalizeHeader_(value) {
   return String(value||'').trim().toLowerCase().replace(/ي/g,'ی').replace(/ى/g,'ی').replace(/ك/g,'ک').replace(/[\s_-]+/g,'');
 }
-/** Exact allowlist; confirm live Settings keys before deploying. */
+/**
+ * Exact allowlist for keys consumed by src/App.tsx.
+ * Keep this exact-match policy: do not return every Settings row publicly.
+ * normalizeHeader_ removes spaces, underscores and hyphens before comparison.
+ */
 function isPublicSettingKey_(rawKey) {
-  const key=normalizeHeader_(rawKey);
-  const allowed=[
-    'hours','businesshours','hoursofoperation','ساعات','ساعاتکاری',
-    'telegram','telegramurl','telegramlink','تلگرام','لینکتلگرام',
-    'whatsapp','whatsappurl','whatsapplink','واتساپ','واتس‌اپ','لینکواتساپ',
-    'instagram','instagramurl','instagramlink','اینستاگرام','لینکاینستاگرام',
-    'channel','telegramchannel','telegramchannelurl','telegramchannellink','کانال','لینککانال','کانالتلگرام','telegramchannelink',
-    'bookingcardnumber','شمارهکارت','کارتبانکی','bookingbankname','نامبانک','بانک',
+  const key = normalizeHeader_(rawKey);
+  const allowed = [
+    // Opening hours / business hours
+    'hours','businesshours','hoursofoperation','workinghours','openinghours',
+    'ساعات','ساعاتکاری','ساعتکاری','ساعاتفعالیت','ساعتفعالیت',
+    // Contact links used by cmsSetting(["telegram"/"تلگرام", ...])
+    'telegram','telegramurl','telegramlink','telegramhandle','telegramusername',
+    'تلگرام','لینکتلگرام','آدرس‌تلگرام',
+    'whatsapp','whatsappurl','whatsapplink','whatsappbusiness',
+    'واتساپ','واتس‌اپ','لینکواتساپ','لینکواتس‌اپ',
+    'instagram','instagramurl','instagramlink','instagramhandle',
+    'اینستاگرام','لینکاینستاگرام',
+    // Channel link used by cmsSetting(["channel", "کانال", "telegramchannel"])
+    'channel','channelurl','channellink','telegramchannel','telegramchannelurl',
+    'telegramchannellink','telegramchannelink','کانال','لینککانال','کانالتلگرام',
+    // Public card-transfer details consumed by the booking payment screen
+    'bookingcardnumber','bookingbankcardnumber','شمارهکارت','کارتبانکی',
+    'bookingbankname','نامبانک','بانک',
     'bookingcardholder','صاحبکارت','نامصاحبکارت','بنام','بنـام',
     'bookingpaymenttext','توضیحپرداخت','متنپرداخت'
   ];
-  return allowed.indexOf(key)>=0;
+  return allowed.indexOf(key) >= 0;
 }
 /** Structural/privacy test only; live headers and compatibility remain unverified. */
 function testPublicPayloadSafety() {
