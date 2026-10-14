@@ -109,11 +109,7 @@ function getPublicPayloadBatched_() {
       });
       rows.push(row);
     }
-    outputRows[name] = rows.filter(function(row) {
-      const value = String(row['فعال'] || '').trim().toLowerCase();
-      return value === 'بله' || value === 'فعال' || value === 'true' ||
-        value === '1' || value === 'yes';
-    });
+    outputRows[name] = rows.filter(publicRowIsActive_);
   });
 
   outputRows.settings = readPublicSettingsBatched_(
@@ -135,6 +131,32 @@ function getPublicPayloadBatched_() {
     dailyContent: outputRows.dailyContent,
     bookingContent: outputRows.bookingContent
   };
+}
+
+/**
+ * Match the Mini App's cmsActive behavior:
+ * - use Persian or English active/status headers;
+ * - blank or missing status means active;
+ * - explicit false-like/unrecognized status means inactive.
+ */
+function publicRowIsActive_(row) {
+  const aliases = ['فعال','active','status'];
+  let raw = '';
+  let found = false;
+  aliases.some(function(alias) {
+    const wanted = normalizeHeader_(alias);
+    const actual = Object.keys(row).find(function(key) {
+      return normalizeHeader_(key) === wanted;
+    });
+    if (actual !== undefined) {
+      found = true;
+      raw = String(row[actual] == null ? '' : row[actual]).trim().toLowerCase();
+      return !!raw;
+    }
+    return false;
+  });
+  if (!found || !raw) return true;
+  return ['بله','فعال','true','1','yes'].indexOf(raw) >= 0;
 }
 
 function readPublicSettingsBatched_(headers, sheetExists) {
@@ -406,6 +428,13 @@ function testPublicPayloadSafety() {
   const settingAliasCoverage = requiredSettingAliases.every(function(key) {
     return isPublicSettingKey_(key);
   });
+  const activeFilterCompatibility =
+    publicRowIsActive_({title:'missing status is active'}) &&
+    publicRowIsActive_({title:'blank status is active',active:''}) &&
+    publicRowIsActive_({title:'English active is active',active:'yes'}) &&
+    publicRowIsActive_({title:'Persian active is active','فعال':'بله'}) &&
+    !publicRowIsActive_({title:'inactive is filtered','فعال':'خیر'}) &&
+    !publicRowIsActive_({title:'false is filtered',status:'false'});
   const data=getMiniAppData_();
   const names=['services','courses','events','faq','pages','settings','dailyContent','bookingContent'];
   const expected=['success'].concat(names).sort();
@@ -419,9 +448,9 @@ function testPublicPayloadSafety() {
     return data[name].every(row=>Object.keys(row).every(key=>allowed.has(normalizeHeader_(key))));
   });
   const rowMetadataAbsent=names.every(name=>data[name].every(row=>!Object.prototype.hasOwnProperty.call(row,'_row')));
-  const result={ok:topKeys&&privateCollectionsAbsent&&settingsSafe&&projectionSafe&&rowMetadataAbsent&&settingAliasCoverage,
+  const result={ok:topKeys&&privateCollectionsAbsent&&settingsSafe&&projectionSafe&&rowMetadataAbsent&&settingAliasCoverage&&activeFilterCompatibility,
     expectedTopLevelKeysOnly:topKeys,privateCollectionsAbsent,settingsAllowlisted:settingsSafe,settingAliasCoverage,
-    onlyAllowlistedFields:projectionSafe,rowMetadataAbsent,
+    onlyAllowlistedFields:projectionSafe,rowMetadataAbsent,settingAliasCoverage,activeFilterCompatibility,
     counts:{services:data.services.length,courses:data.courses.length,events:data.events.length,faq:data.faq.length,pages:data.pages.length,settings:data.settings.length,dailyContent:data.dailyContent.length,bookingContent:data.bookingContent.length},
     valuesBatchRequests:PUBLIC_VALUES_BATCH_REQUESTS,
     elapsedMs:Date.now()-startedAt,
