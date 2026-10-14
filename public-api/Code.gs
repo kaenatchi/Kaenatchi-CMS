@@ -394,6 +394,18 @@ function isPublicSettingKey_(rawKey) {
 function testPublicPayloadSafety() {
   const startedAt = Date.now();
   PUBLIC_VALUES_BATCH_REQUESTS = 0;
+  // These are the exact key families consumed by src/App.tsx. Check aliases
+  // locally as well as checking the live payload, so accidental allowlist
+  // regressions are caught without writing to the spreadsheet.
+  const requiredSettingAliases = [
+    'hours','ساعات','telegram','تلگرام','whatsapp','واتساپ',
+    'instagram','اینستاگرام','channel','کانال',
+    'booking_card_number','شماره کارت','booking_bank_name','نام بانک',
+    'booking_card_holder','صاحب کارت','booking_payment_text','توضیح پرداخت'
+  ];
+  const settingAliasCoverage = requiredSettingAliases.every(function(key) {
+    return isPublicSettingKey_(key);
+  });
   const data=getMiniAppData_();
   const names=['services','courses','events','faq','pages','settings','dailyContent','bookingContent'];
   const expected=['success'].concat(names).sort();
@@ -407,8 +419,8 @@ function testPublicPayloadSafety() {
     return data[name].every(row=>Object.keys(row).every(key=>allowed.has(normalizeHeader_(key))));
   });
   const rowMetadataAbsent=names.every(name=>data[name].every(row=>!Object.prototype.hasOwnProperty.call(row,'_row')));
-  const result={ok:topKeys&&privateCollectionsAbsent&&settingsSafe&&projectionSafe&&rowMetadataAbsent,
-    expectedTopLevelKeysOnly:topKeys,privateCollectionsAbsent,settingsAllowlisted:settingsSafe,
+  const result={ok:topKeys&&privateCollectionsAbsent&&settingsSafe&&projectionSafe&&rowMetadataAbsent&&settingAliasCoverage,
+    expectedTopLevelKeysOnly:topKeys,privateCollectionsAbsent,settingsAllowlisted:settingsSafe,settingAliasCoverage,
     onlyAllowlistedFields:projectionSafe,rowMetadataAbsent,
     counts:{services:data.services.length,courses:data.courses.length,events:data.events.length,faq:data.faq.length,pages:data.pages.length,settings:data.settings.length,dailyContent:data.dailyContent.length,bookingContent:data.bookingContent.length},
     valuesBatchRequests:PUBLIC_VALUES_BATCH_REQUESTS,
