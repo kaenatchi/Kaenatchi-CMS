@@ -76,7 +76,7 @@ function getPublicPayloadBatched_() {
         name: name,
         index: index,
         header: headers[index],
-        range: PUBLIC_SHEETS[name] + '!' + letter + '2:'
+        range: PUBLIC_SHEETS[name] + '!' + letter + '2:' + letter
       });
     });
   });
@@ -147,7 +147,7 @@ function readPublicSettingsBatched_(headers, sheetExists) {
   if (keyIndex < 0) return [];
 
   const keyLetter = publicColumnLetter_(keyIndex + 1);
-  const keyRows = readPublicValuesBatch_([sheetName + '!' + keyLetter + '2:'])[0] || [];
+  const keyRows = readPublicValuesBatch_([sheetName + '!' + keyLetter + '2:' + keyLetter])[0] || [];
   const publicRows = [];
   keyRows.forEach(function(row, index) {
     const key = String(row[0] == null ? '' : row[0]).trim();
