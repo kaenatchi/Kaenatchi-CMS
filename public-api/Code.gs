@@ -162,44 +162,44 @@ function publicRowIsActive_(row) {
 function readPublicSettingsBatched_(headers, sheetExists) {
   const sheetName = PUBLIC_SHEETS.settings;
   if (!sheetExists || !headers.length) return [];
-  const keyAliases = ['کلید', 'key', 'نام', 'name'];
+  const keyAliases = ['کلید', 'key', 'نام'];
   const keyIndex = headers.findIndex(function(header) {
     return keyAliases.map(normalizeHeader_).indexOf(normalizeHeader_(header)) >= 0;
   });
   if (keyIndex < 0) return [];
 
-  const keyLetter = publicColumnLetter_(keyIndex + 1);
-  const keyRows = readPublicValuesBatch_([sheetName + '!' + keyLetter + '2:' + keyLetter])[0] || [];
-  const publicRows = [];
-  keyRows.forEach(function(row, index) {
-    const key = String(row[0] == null ? '' : row[0]).trim();
-    if (key && isPublicSettingKey_(key)) publicRows.push(index + 2);
-  });
-  if (!publicRows.length) return [];
-
+  // Read each allowlisted Settings column once, then filter rows in memory.
+  // This avoids constructing one API range per cell (which grows as
+  // public setting rows × public columns) while never fetching non-public columns.
   const allowed = new Set(PUBLIC_FIELDS.settings.map(normalizeHeader_));
   const publicColumns = [];
   headers.forEach(function(header, index) {
     if (header && allowed.has(normalizeHeader_(header))) {
-      publicColumns.push({header:header,letter:publicColumnLetter_(index + 1)});
+      publicColumns.push({header:header,index:index,letter:publicColumnLetter_(index + 1)});
     }
   });
   if (!publicColumns.length) return [];
 
-  const ranges = [];
-  publicRows.forEach(function(rowNumber) {
-    publicColumns.forEach(function(column) {
-      ranges.push(sheetName + '!' + column.letter + rowNumber);
-    });
+  const keyLetter = publicColumnLetter_(keyIndex + 1);
+  const keyValues = readPublicValuesBatch_([sheetName + '!' + keyLetter + '2:' + keyLetter])[0] || [];
+  const approvedRowIndexes = [];
+  keyValues.forEach(function(row, index) {
+    const key = String(row[0] == null ? '' : row[0]).trim();
+    if (key && isPublicSettingKey_(key)) approvedRowIndexes.push(index);
   });
-  const values = readPublicValuesBatch_(ranges);
-  return publicRows.map(function(_, rowIndex) {
+  if (!approvedRowIndexes.length) return [];
+
+  const columnValues = readPublicValuesBatch_(
+    publicColumns.map(function(column) {
+      return sheetName + '!' + column.letter + '2:' + column.letter;
+    })
+  );
+  return approvedRowIndexes.map(function(rowIndex) {
     const row = {};
     publicColumns.forEach(function(column, columnIndex) {
-      const cell = values[rowIndex * publicColumns.length + columnIndex] || [];
-      row[column.header] = cell.length && cell[0].length
-        ? String(cell[0][0] == null ? '' : cell[0][0])
-        : '';
+      const cells = columnValues[columnIndex] || [];
+      const cell = cells[rowIndex] || [];
+      row[column.header] = cell.length ? String(cell[0] == null ? '' : cell[0]) : '';
     });
     return row;
   });
