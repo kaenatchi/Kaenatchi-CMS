@@ -89,3 +89,17 @@ Source review does not reveal the access settings of the currently deployed Apps
 - Risk assessment: because this public web app executes as the owner, any exposed server entry point must be treated as potentially callable by unauthenticated visitors. Reviewed source includes admin pages and callable read/write functions without explicit server-side authorization; this is a high-priority security risk until the deployed source and all routes are verified.
 - This setting alone does not prove exploitation or data access. Do not change the live deployment's access setting as an emergency quick fix, because it may break the public Mini App/CMS integration. Keep the current deployment unchanged while preparing a staged, route-separated authorization fix and a regression/rollback plan.
 - Immediate containment options to assess (not execute without owner approval): rotate/revoke any accidentally exposed secrets; review Apps Script executions/audit logs and spreadsheet sharing; separate public allowlisted content API from admin-only operations; test the protected admin app on a separate staging deployment before production rollout.
+
+## Critical concrete exposure found in current CMS source review
+- `doGet(e)` serves `Admin.html` for any `page` value other than `central`; there is no server-side admin identity gate before serving it.
+- The CMS `Admin.html` client directly invokes `getCMSData`, `addItem`, `updateItem`, `toggleItem`, and `deleteItem` through `google.script.run`.
+- `getCMSData()` returns `bookings`, `customers`, `payments`, `schedule`, `blockedDates`, `blockedSlots`, and `bookingLogs` in addition to content and settings. Thus the admin page is not merely a hidden URL: if the deployed Version 46 contains this same source and its `Anyone` access applies as reported, unauthenticated visitors may be able to load the admin UI and invoke owner-executed server functions. This must be treated as a potentially severe exposure, but source parity with Version 46 has not yet been confirmed.
+- `getMiniAppData()` currently calls `getCMSData()` and then filters its output for the public payload. Even though the returned object is filtered, this unnecessarily reads sensitive booking/customer/payment/log data into the execution. Replace with a public-only reader that never fetches those collections.
+- Existing draft PR #8 (`public-api/Code.gs`) is a promising isolated public-read scaffold because it avoids `getCMSData()` and excludes booking/customer/payment/schedule/log collections. It is NOT deployed and still requires staging runtime, payload-compatibility, public-settings allowlist, and latency tests; do not merge/deploy it as a quick fix without completing those tests.
+
+## Priority and containment guidance
+1. Treat CMS admin RPCs and broad data reads as P0 to verify against deployed Version 46.
+2. Do not change Version 46 access settings abruptly: it may break the Mini App's public CMS reads and the existing admin workflow.
+3. The owner should review Apps Script Executions for unfamiliar invocations and review Google Sheet sharing. Do not share secrets or bot tokens in chat.
+4. Prepare a separate staging deployment with an allowlisted public API and server-side admin authorization, then regression-test the Mini App and admin functions before any production switch.
+5. If Version 46 source confirms the same unauthenticated admin functions, discuss a carefully staged containment plan before any live change; this audit itself makes no code or deployment changes.
