@@ -115,3 +115,27 @@ Source review does not reveal the access settings of the currently deployed Apps
 - PR #8: open Draft, source scaffold only; no test run and no deployment. Do not merge until staging compatibility/security/performance checks are documented.
 - PR #9: open Draft documentation-only; GitHub currently reports `mergeable=false`, so inspect/rebase conflicts before any eventual merge. Do not force merge.
 - Live CMS Version 46 source parity is still unknown. No application code or live settings were changed in this review.
+
+## Next implementation design gate (read-only review, 2026-10-28)
+
+### Separate admin dashboard request flow
+1. The separate bot `@KaenatChiAdminBot` should accept only the configured numeric administrator ID (`6230119080` as owner-provided ID); usernames and a typed password alone are not identity proof.
+2. The bot webhook must validate Telegram's webhook secret and verify `callback_query.from.id` / `message.from.id` against the configured administrator ID before issuing a launch credential.
+3. Issue a random, one-time, short-lived launch credential server-side. Store only a digest with expiry and used/revoked state in a server-side store; never put a bot token or long-lived credential in a URL. The dashboard redeems the credential once and receives a short-lived session token.
+4. Every privileged Apps Script operation must validate the session server-side, expiry, admin ID, and operation allowlist. Do not trust client-provided `adminId`, query parameters, UI visibility, localStorage, or Telegram username.
+5. If Apps Script Web App cannot safely set/validate browser session cookies or protect cross-origin calls in the chosen static-host setup, use an explicit signed short-lived bearer token and strict origin/CORS handling; do not treat CORS as authorization. Confirm the actual Apps Script redirect/content-service behavior in staging before selecting the final transport.
+6. Keep the public CMS API read-only and schema-allowlisted. Do not route public reads through `getCMSData()`, and do not return booking/customer/payment/log collections.
+7. Add independent guards to VIP admin RPCs and booking approve/reject actions. Preserve customer-facing VIP `doPost` verification and public booking/payment flows. Booking Telegram callback authorization must verify the actual callback actor ID, not only the message chat ID.
+8. A password may be an additional factor, but it must be checked server-side, stored as a salted hash if persisted, rate-limited, and never shipped in frontend code. Given the sole admin ID, Telegram identity verification plus a one-time credential is the primary gate.
+
+### Staging acceptance tests before any production deployment
+- Authorized owner can open the dashboard and perform each explicitly allowed action.
+- Wrong Telegram user, missing configuration, malformed/expired/replayed launch credential, expired session, and direct calls to every admin RPC are denied.
+- Public Mini App can still load its exact required public payload; private settings and private collections are absent from responses and are not read by the public payload builder.
+- Customer VIP data/token activation and ordinary booking/payment paths continue to work.
+- Booking approve/reject only works for the authorized callback actor; customer-originated calls cannot approve/reject or release holds.
+- Repeat the read-only public payload test, compare field-for-field with the current Mini App expectations, and record at least three latency measurements.
+- Capture test evidence and a rollback plan; get explicit owner approval before changing any live deployment.
+
+### Current decision
+- Continue source review and staging design only. No application code, Script Properties, bot token, Sheet, or deployment was changed by this review.
