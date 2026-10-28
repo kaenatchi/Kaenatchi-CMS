@@ -139,3 +139,25 @@ Source review does not reveal the access settings of the currently deployed Apps
 
 ### Current decision
 - Continue source review and staging design only. No application code, Script Properties, bot token, Sheet, or deployment was changed by this review.
+
+
+## Server-call inventory from current checked-in UI (2026-10-28)
+
+### CMS Central page
+- Dynamic `runServer(name, ...args)` calls are present. The literal call inventory found in the checked-in Central page is: `getCMSData`, `seedDailyContentStarterPack`, `getBookingSchedule`, `saveBookingSchedule`, `updateItem`, `addItem`, `getBookingClosures`, `addBookingClosure`, `toggleBookingClosure`, `deleteBookingClosure`, `uploadDailyContentImage`, `toggleItem`, `deleteItem`.
+- Because the UI calls server methods dynamically, guard coverage must be validated against the complete set of values passed to `runServer`, plus all server functions that remain externally reachable. Do not rely only on visible buttons or static grep.
+
+### CMS Admin page
+- Client calls include `getCMSData`, `addItem`, `updateItem`, `toggleItem`, and `deleteItem`. Each requires server-side access checks if it returns private data or mutates the CMS. The current checked-in server functions do not show an authorization check at their entry points.
+
+### VIP Admin page versus VIP customer page
+- Admin UI invokes `getAdminInitialData`, `saveVIPSettings`, `addVIPCustomer`, `getVIPCustomers`, `setVIPStatus`, `createVIPToken`, `getVIPTokens`, `generateVIPConnectionCode`, `getVIPConnectionCodes`, and `revokeVIPConnectionCode`.
+- Customer UI has its own calls and must be kept separate. In particular, do not lock down shared/customer-facing settings or the customer `doPost` flow merely because the admin UI uses related code. Every admin-only RPC must be protected independently on the server.
+
+### Booking backend admin routes
+- Router currently exposes `approveBooking`, `rejectBooking`, `cancelBooking`, and `releaseExpiredHolds` as request actions. Approval/rejection need authenticated admin authorization at the route and/or function boundary; cancellation/hold-release require caller analysis before changing their policy to avoid breaking legitimate customer/system flows.
+- Telegram callback handling checks the configured chat ID but the checked-in callback handler does not verify `callbackQuery.from.id` against the configured numeric admin user ID. A chat ID is not sufficient proof of which Telegram account clicked a button.
+
+### Implementation boundary
+- This inventory is source-review evidence only. It does not claim to enumerate the deployed Version 46 source. The deployed code still needs to be compared with repository source before production design is finalized.
+- No application code, bot configuration, Script Properties, live deployment, or Sheet was changed in this step.
