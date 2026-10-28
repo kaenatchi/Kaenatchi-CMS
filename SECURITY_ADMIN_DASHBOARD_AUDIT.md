@@ -64,3 +64,14 @@ Source review does not reveal the access settings of the currently deployed Apps
 - Map all `google.script.run` calls in both admin HTML files to the exact server functions before adding guards.
 - Compare repository source to the deployed Apps Script versions. The repository default branch may not equal the active deployed source; do not overwrite live code based only on `main`.
 - The current PR is documentation-only and deliberately remains Draft.
+
+## Client-to-server call mapping (source-level, default branches)
+- Central CMS `Admin.html` calls `getCMSData`, `addItem`, `updateItem`, `toggleItem`, and `deleteItem` through `google.script.run`. The admin UI therefore needs guards on each callable server method, not only on `doGet`.
+- CMS `Central.html` uses a wrapper around `google.script.run` for backend operations. Before implementation, enumerate its operation names from the wrapper and confirm which are intentionally public versus admin-only; do not assume every call from Central is public.
+- VIP `Admin.html` calls `getAdminInitialData`, `saveVIPSettings`, `addVIPCustomer`, `getVIPCustomers`, `setVIPStatus`, `createVIPToken`, `getVIPTokens`, `generateVIPConnectionCode`, `getVIPConnectionCodes`, and `revokeVIPConnectionCode`. These admin-only calls should each validate the authenticated admin session server-side.
+- VIP customer `index.html` separately calls customer-facing methods including `getVIPData`, `activateToken`, and `getVIPSettings`; classify `getVIPSettings` carefully because it may be shared between customer UI and admin UI. Do not simply protect or expose it without checking the exact returned fields and callers.
+
+## Hosting decision: keep it reversible
+- Do not migrate the existing customer-facing CMS page in place. The graphical admin dashboard should be a separate front-end entry point, linked only from the separate admin bot after server-issued, short-lived launch authorization.
+- A static host such as GitHub Pages can serve the dashboard assets, but it cannot enforce authorization itself. Every read/write must pass through an Apps Script or other already-approved backend endpoint that verifies the launch credential and current admin identity.
+- Before choosing the final host, verify Telegram Mini App launch compatibility, origin/CORS behavior for the chosen backend transport, and whether the existing Apps Script deployment can safely support the needed authenticated calls. No hosting or deployment change has been made.
