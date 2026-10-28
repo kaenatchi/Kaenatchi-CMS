@@ -186,3 +186,27 @@ Source review does not reveal the access settings of the currently deployed Apps
 
 ### Current safe next action
 - The next action is an owner-side, read-only comparison of deployed Version 46 source against repository source, followed by staging setup. No code or production settings are changed by this checklist.
+
+
+## CMS main-branch callable RPC inventory (static source review, 2026-10-28)
+
+Source inspected: `code.gs` on `main`, blob SHA `149893b3283687936863d19c5b12d8bec6d703f4`. This is repository source, not proof of deployed Version 46 parity.
+
+### Client-callable functions (names do not end in underscore)
+- Public read candidate: `getMiniAppData`. Keep this public only after narrowing its data source and allowlisting its response.
+- Admin/private read candidates: `getCMSData`, `getDashboardStats`, `getBookingSchedule`, `getBookingClosures`. Confirm each caller and whether any data is needed publicly; otherwise require a valid admin session.
+- Admin mutations requiring server-side authorization: `saveBookingSchedule`, `addItem`, `updateItem`, `deleteItem`, `toggleItem`, `addBookingClosure`, `toggleBookingClosure`, `deleteBookingClosure`, `uploadDailyContentImage`, `seedDailyContentStarterPack`.
+- Diagnostic candidate: `testMiniAppData`. Restrict to staging/test use or remove from public reach if it reveals internal diagnostics.
+- `doGet` currently serves pages/routes and must not expose the Admin page/data merely because a query parameter selects it; keep the public Mini App route separate from the protected dashboard route.
+- Functions ending in underscore (for example `getAllData_`, `getOrCreateCmsSheet_`, `callBookingAdmin_`) are intended as private Apps Script helpers and are not directly callable through `google.script.run`; still ensure public functions cannot invoke them in an unauthorized path.
+
+### Authorization design notes
+- Use a single server-side guard for each admin RPC and fail closed if admin configuration/session verification is missing.
+- A client-side password prompt, hidden link, username check, or dashboard URL is not an authorization boundary.
+- Avoid treating `getBookingSchedule` and `getBookingClosures` as public just because the booking UI has date/slot views; trace actual callers and provide a separate minimal public response if required.
+- Avoid using a generic `getCMSData` as the dashboard's long-term API without a server-side guard and response minimization.
+- Before coding, confirm exact function callers in `Central.html` and `Admin.html`, then add tests for every callable public function.
+
+### Next gate
+- This inventory is a proposed classification from static code inspection. It is not an authorization patch and has not been runtime-tested.
+- Next implementation should occur only in an isolated staging project/branch after explicit owner approval. No live source, deployment, Sheet, or Script Property was changed in this review.
