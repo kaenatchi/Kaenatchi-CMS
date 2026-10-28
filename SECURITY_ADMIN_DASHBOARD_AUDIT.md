@@ -243,3 +243,24 @@ Source inspected: `code.gs` on `main`, blob SHA `149893b3283687936863d19c5b12d8b
 
 ### Next gate
 - Next code change, after explicit approval, should be an isolated staging implementation of the server-side guard and public-only data builder, followed by direct-RPC negative tests. No app code or live deployment was changed during this trace.
+
+
+## Cross-repository server-side guard verification (2026-10-28)
+
+This step inspected the checked-in VIP and booking backend source. It was read-only; no application files or deployments were changed.
+
+### VIP admin RPCs
+- Current VIP source functions `getAdminInitialData`, `getVIPCustomers`, `getVIPTokens`, `getVIPConnectionCodes`, `saveVIPSettings`, `addVIPCustomer`, `setVIPStatus`, `createVIPToken`, `generateVIPConnectionCode`, and `revokeVIPConnectionCode` do not show a server-side admin identity/session check at their entry points.
+- `getAdminInitialData` aggregates customer, token, connection-code, and settings data. It must be protected before calling any of those helpers.
+- Do not add an admin-only guard to customer `doPost` or customer token activation merely because these share the VIP project. Preserve the existing Telegram `initData` validation for customer identity and add a distinct admin authorization path.
+
+### Booking backend
+- `routeRequest_` currently routes `approveBooking` and `rejectBooking` to their mutation functions without authenticating an admin at the router.
+- `approveBooking_` and `rejectBooking_` record `request.adminId` / `request.admin` as audit labels; those caller-supplied values are not proof of authorization.
+- `handleTelegramCallbackQuery_` verifies the configured admin chat ID but does not compare `callbackQuery.from.id` to the authorized numeric admin user ID. In a group/shared chat, chat-level verification is not actor-level authorization.
+- Before guarding `cancelBooking` or `releaseExpiredHolds`, trace all public, customer, and scheduled-trigger callers. Do not block legitimate system cleanup or customer cancellation by applying an indiscriminate admin guard.
+- Existing rejection idempotency should be preserved while adding authorization.
+
+### Required design consequence
+- One shared concept of “admin” must not mean one shared credential across unrelated bots/projects. CMS dashboard sessions, VIP admin RPCs, booking Telegram callbacks, and customer-facing VIP initData have different trust boundaries. Use the appropriate server-side verification at each boundary and keep production bot tokens separate.
+- All changes should first be made in an isolated staging copy and validated against synthetic data. Production changes require explicit owner approval.
