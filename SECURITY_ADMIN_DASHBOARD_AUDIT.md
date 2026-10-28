@@ -210,3 +210,36 @@ Source inspected: `code.gs` on `main`, blob SHA `149893b3283687936863d19c5b12d8b
 ### Next gate
 - This inventory is a proposed classification from static code inspection. It is not an authorization patch and has not been runtime-tested.
 - Next implementation should occur only in an isolated staging project/branch after explicit owner approval. No live source, deployment, Sheet, or Script Property was changed in this review.
+
+
+## UI-to-RPC trace (Central.html and Admin.html, 2026-10-28)
+
+### Central.html
+- The generic `runServer(name, args)` wrapper invokes the named Apps Script function dynamically; it does not add authorization.
+- Literal call sites found: `getCMSData`, `seedDailyContentStarterPack`, `getBookingSchedule`, `saveBookingSchedule`, `updateItem`, `addItem`, `getBookingClosures`, `addBookingClosure`, `toggleBookingClosure`, `deleteBookingClosure`, `uploadDailyContentImage`, `toggleItem`, and `deleteItem`.
+- This page includes both CMS content management and booking/schedule management, so protecting only the older `Admin.html` is insufficient. The route and all server functions called by this page need the same server-side session policy.
+
+### Admin.html
+- The older CMS page directly uses `google.script.run` for `getCMSData`, `addItem`, `updateItem`, `toggleItem`, and `deleteItem`.
+- These are overlapping RPCs with Central.html; any guard must apply in the server implementation, not only one page.
+
+### Public page and diagnostic boundaries
+- `doGet` returns `Central` for the default route and `Admin` for any non-`central` page value. Treat page selection as presentation only, never authorization.
+- `action=getMiniAppData` is the public data route candidate. It should call a minimal public-only builder, not the broad CMS loader.
+- `testMiniAppData` should not expose diagnostics to arbitrary public callers; limit it to staging or an authenticated administrator.
+- The current UI call inventory is source-level only. It does not establish deployed Version 46 parity or prove runtime authorization behavior.
+
+### Implementation-ready authorization table
+| Function family | Policy target |
+|---|---|
+| `getMiniAppData` | Public, strict response allowlist and no private-sheet reads |
+| `getCMSData`, `getDashboardStats` | Admin session required |
+| `getBookingSchedule`, `getBookingClosures` | Admin session required unless a separately minimized public read is proven necessary |
+| CMS CRUD/toggle functions | Admin session required |
+| Schedule/closure mutations | Admin session required |
+| Image upload and seed helper | Admin session required; seed helper may be staging-only |
+| `testMiniAppData` | Staging-only or admin-only |
+| `doGet?page=admin` / default Central page | Page rendering is not a permission check; protect data/actions independently |
+
+### Next gate
+- Next code change, after explicit approval, should be an isolated staging implementation of the server-side guard and public-only data builder, followed by direct-RPC negative tests. No app code or live deployment was changed during this trace.
