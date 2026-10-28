@@ -103,3 +103,15 @@ Source review does not reveal the access settings of the currently deployed Apps
 3. The owner should review Apps Script Executions for unfamiliar invocations and review Google Sheet sharing. Do not share secrets or bot tokens in chat.
 4. Prepare a separate staging deployment with an allowlisted public API and server-side admin authorization, then regression-test the Mini App and admin functions before any production switch.
 5. If Version 46 source confirms the same unauthenticated admin functions, discuss a carefully staged containment plan before any live change; this audit itself makes no code or deployment changes.
+
+## Public API scaffold review (PR #8 source inspection, not runtime-tested)
+- The scaffold includes `testPublicPayloadSafety()`, which checks the top-level response shape, absence of private collections (`bookings`, `customers`, `payments`, `schedule`, `blockedDates`, `blockedSlots`, `bookingLogs`, `bookingSettings`), field allowlisting, settings-key allowlisting, active-row filtering compatibility, and records elapsed time/batched request count. The test performs no spreadsheet writes.
+- The test is a useful starting point but has not been executed in an isolated Apps Script project; code inspection is not a substitute for runtime evidence.
+- Public Settings aliases currently allow business hours, social/contact links, channel links, and booking payment details. Before staging, compare these keys against the actual Mini App settings consumed in `src/App.tsx` and inspect the real Settings sheet for sensitive keys. Only public values should be exposed.
+- The scaffold uses the Advanced Google Sheets service (`Sheets.Spreadsheets...`), so the staging project must enable the Advanced Sheets service and its required API. Verify that before measuring performance.
+- CMS and VIP HTML files use `google.script.run` directly for admin actions. The UI call inventory must be captured reliably by parsing all chained call patterns; a simple regex did not produce a complete method list, so no guards should be added based on an incomplete list.
+
+## Current gate
+- PR #8: open Draft, source scaffold only; no test run and no deployment. Do not merge until staging compatibility/security/performance checks are documented.
+- PR #9: open Draft documentation-only; GitHub currently reports `mergeable=false`, so inspect/rebase conflicts before any eventual merge. Do not force merge.
+- Live CMS Version 46 source parity is still unknown. No application code or live settings were changed in this review.
