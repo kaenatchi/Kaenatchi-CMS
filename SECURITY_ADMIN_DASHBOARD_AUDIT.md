@@ -82,3 +82,10 @@ Source review does not reveal the access settings of the currently deployed Apps
 - Web App URL: `https://script.google.com/macros/s/AKfycbzgocb54x4FDoQl3C8-o2WnipZuQYkM1j1juV-ZZKHoieN7DbrybTj3WyXbJe5I2nMhXw/exec`.
 - Treat this as the live reference deployment; do not edit, redeploy, or replace it during the audit.
 - Still required from owner: read-only confirmation of the deployment's 'Execute as' and 'Who has access' values, plus a source comparison between deployed Version 46 and the repository source. The deployment ID/version alone does not establish access scope or source parity.
+
+## Confirmed live deployment access settings (owner checked, 2026-10-28)
+- Execute as: `Me`.
+- Who has access: `Anyone`.
+- Risk assessment: because this public web app executes as the owner, any exposed server entry point must be treated as potentially callable by unauthenticated visitors. Reviewed source includes admin pages and callable read/write functions without explicit server-side authorization; this is a high-priority security risk until the deployed source and all routes are verified.
+- This setting alone does not prove exploitation or data access. Do not change the live deployment's access setting as an emergency quick fix, because it may break the public Mini App/CMS integration. Keep the current deployment unchanged while preparing a staged, route-separated authorization fix and a regression/rollback plan.
+- Immediate containment options to assess (not execute without owner approval): rotate/revoke any accidentally exposed secrets; review Apps Script executions/audit logs and spreadsheet sharing; separate public allowlisted content API from admin-only operations; test the protected admin app on a separate staging deployment before production rollout.
