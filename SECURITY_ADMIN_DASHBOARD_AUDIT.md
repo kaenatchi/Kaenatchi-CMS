@@ -161,3 +161,28 @@ Source review does not reveal the access settings of the currently deployed Apps
 ### Implementation boundary
 - This inventory is source-review evidence only. It does not claim to enumerate the deployed Version 46 source. The deployed code still needs to be compared with repository source before production design is finalized.
 - No application code, bot configuration, Script Properties, live deployment, or Sheet was changed in this step.
+
+
+## Next step: safe staging preparation checklist (2026-10-28)
+
+### Live-vs-repository parity must be established by the project owner
+- Live deployment is still the owner-reported Version 46 deployment documented above. Repository source alone cannot establish what is deployed.
+- In Apps Script editor, inspect the deployment's associated project and identify the deployed version/source. Compare the relevant `doGet`, public data functions, and admin RPC functions with the checked-in repository. Do not edit the deployment or click Deploy during this inspection.
+- Record only the result and file/function differences; never copy bot tokens, passwords, or customer data into GitHub or chat.
+
+### Isolated staging project setup
+1. Create a new Apps Script project owned by the same account; do not create it by editing the live project.
+2. Use synthetic, non-customer Sheets with the minimum CMS/VIP columns required by the code. Do not share the live spreadsheet with the staging project.
+3. Set separate staging-only Script Properties for the admin numeric ID, staging bot token, and webhook secret. Never use the production bot token in staging.
+4. Enable the Advanced Google Sheets service only if the public API scaffold requires it, and verify the linked API is enabled.
+5. Deploy staging as a Web App with the least exposure that still supports the test. If Telegram needs a public webhook, require Telegram's webhook secret and enforce actor ID on every admin action.
+6. Run the test matrix against synthetic data; retain redacted evidence only. Do not point the Mini App, production bot webhook, or production Sheets at staging.
+
+### Hosting/session design is not yet finalized
+- A static dashboard URL is not a security boundary. All data and mutations must pass through authenticated server functions.
+- Do not place bot tokens or long-lived session credentials in the static bundle, query strings, or localStorage.
+- Before choosing a browser session scheme, prove in staging how Apps Script handles redirects, origin/CORS, request headers, and short-lived credential redemption. CORS alone is not authorization.
+- If Apps Script cannot provide the required session behavior safely, reassess the transport while preserving the locked free-stack preference; do not silently introduce paid infrastructure.
+
+### Current safe next action
+- The next action is an owner-side, read-only comparison of deployed Version 46 source against repository source, followed by staging setup. No code or production settings are changed by this checklist.
