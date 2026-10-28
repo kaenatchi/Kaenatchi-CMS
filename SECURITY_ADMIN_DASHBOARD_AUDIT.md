@@ -75,3 +75,10 @@ Source review does not reveal the access settings of the currently deployed Apps
 - Do not migrate the existing customer-facing CMS page in place. The graphical admin dashboard should be a separate front-end entry point, linked only from the separate admin bot after server-issued, short-lived launch authorization.
 - A static host such as GitHub Pages can serve the dashboard assets, but it cannot enforce authorization itself. Every read/write must pass through an Apps Script or other already-approved backend endpoint that verifies the launch credential and current admin identity.
 - Before choosing the final host, verify Telegram Mini App launch compatibility, origin/CORS behavior for the chosen backend transport, and whether the existing Apps Script deployment can safely support the needed authenticated calls. No hosting or deployment change has been made.
+
+## Owner-provided live CMS deployment reference (2026-10-28)
+- The owner identified the currently healthy/live CMS deployment as Version 46, dated 9 Oct 2026 at 19:27.
+- Deployment ID: `AKfycbzgocb54x4FDoQl3C8-o2WnipZuQYkM1j1juV-ZZKHoieN7DbrybTj3WyXbJe5I2nMhXw`.
+- Web App URL: `https://script.google.com/macros/s/AKfycbzgocb54x4FDoQl3C8-o2WnipZuQYkM1j1juV-ZZKHoieN7DbrybTj3WyXbJe5I2nMhXw/exec`.
+- Treat this as the live reference deployment; do not edit, redeploy, or replace it during the audit.
+- Still required from owner: read-only confirmation of the deployment's 'Execute as' and 'Who has access' values, plus a source comparison between deployed Version 46 and the repository source. The deployment ID/version alone does not establish access scope or source parity.
