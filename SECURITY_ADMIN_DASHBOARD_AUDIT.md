@@ -38,3 +38,29 @@ Status: review-only plan. No application code, live Apps Script deployment, bot 
 
 ## Important deployment caveat
 Source review does not reveal the access settings of the currently deployed Apps Script web apps. Those settings must be checked in Apps Script by the owner before concluding whether a deployed URL is currently accessible to everyone. No live deployment has been changed by this audit.
+
+## Function inventory from the current default-branch source
+
+### CMS (`Kaenatchi-CMS/code.gs`)
+- Admin-sensitive reads: `getCMSData`, `getDashboardStats`, `getBookingClosures`.
+- Admin-sensitive writes: `saveBookingSchedule`, `addItem`, `updateItem`, `deleteItem`, `toggleItem`, `addBookingClosure`, `toggleBookingClosure`, `deleteBookingClosure`, `uploadDailyContentImage`, `seedDailyContentStarterPack`.
+- Routing concern: `doGet` serves `Central`/`Admin` and public `getMiniAppData`; `getMiniAppData` currently calls broad `getCMSData`, so public response construction should be refactored to read only allowlisted public sheets/fields rather than invoking admin-wide data aggregation.
+- Internal helper functions should not be exposed as public admin RPCs unless explicitly intended. Google Apps Script `google.script.run` can call server-side functions that are not private-suffixed, so the allowlist and guards must account for all client-callable names.
+
+### VIP (`kaenatchi-admin/code.gs`)
+- Admin-sensitive reads: `getAdminInitialData`, `getVIPTokens`, `getVIPCustomers`, `getVIPConnectionCodes`, `getVIPSettings`.
+- Admin-sensitive writes: `createVIPToken`, `addVIPCustomer`, `setVIPStatus`, `generateVIPConnectionCode`, `revokeVIPConnectionCode`, `saveVIPSettings`.
+- Mixed/customer functions requiring careful classification: `getVIPData`, `activateToken`, `validateVIPToken`, `useVIPToken`, `calculateVIPDiscount`, `connectTelegramToVIP`, `doPost`. Preserve customer-facing operations and add authorization only to admin-only operations; do not blanket-block the customer API.
+- `validateTelegramInitData_` exists in source, but each admin request still needs a verified admin identity/session. Do not treat a valid customer `initData` signature as admin permission.
+
+### Booking backend (`KaenatChi-Booking-Backend-v2/Code.gs`)
+- Sensitive routes to review: `routeRequest_`, `approveBooking_`, `rejectBooking_`, `cancelBooking_`, `releaseExpiredHolds_`, and `handleTelegramCallbackQuery_`.
+- Telegram callback handling must validate the callback actor's numeric Telegram user ID as well as the expected admin chat/webhook secret; checking only the message chat is insufficient for group scenarios.
+- Caller-supplied `admin`/`adminId` values are audit labels, not credentials.
+- Do not add blanket authorization to shared helpers or public actions until call sites are mapped. Keep public service/catalog, slot/date, booking creation, payment submission, and customer status paths working.
+
+## Verification still required before implementation
+- Inspect each deployment's actual Apps Script 'Execute as' and 'Who has access' settings in the owner account; repository source cannot establish live deployment exposure.
+- Map all `google.script.run` calls in both admin HTML files to the exact server functions before adding guards.
+- Compare repository source to the deployed Apps Script versions. The repository default branch may not equal the active deployed source; do not overwrite live code based only on `main`.
+- The current PR is documentation-only and deliberately remains Draft.
