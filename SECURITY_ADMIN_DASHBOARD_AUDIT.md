@@ -264,3 +264,37 @@ This step inspected the checked-in VIP and booking backend source. It was read-o
 ### Required design consequence
 - One shared concept of “admin” must not mean one shared credential across unrelated bots/projects. CMS dashboard sessions, VIP admin RPCs, booking Telegram callbacks, and customer-facing VIP initData have different trust boundaries. Use the appropriate server-side verification at each boundary and keep production bot tokens separate.
 - All changes should first be made in an isolated staging copy and validated against synthetic data. Production changes require explicit owner approval.
+
+
+## Staging runbook — ordered execution plan (2026-10-28)
+
+This runbook is intentionally non-invasive. It defines the next execution step; it does not create or deploy an Apps Script project.
+
+### Phase A — create isolated test assets
+- Create a separate Apps Script project and synthetic test spreadsheets. No live CMS/VIP/booking spreadsheet IDs or production bot token should be copied into staging.
+- Create a staging-only Telegram bot and store its token/webhook secret in that staging project's Script Properties.
+- Set the authorized test admin ID to the owner-provided numeric ID only if testing with the owner account; include a second Telegram account for negative authorization tests.
+- Enable Advanced Google Sheets API only if the public API scaffold uses it; record the enabled service and API configuration.
+- Keep the staging web app URL separate from all production frontend configuration and webhook URLs.
+
+### Phase B — baseline before adding guards
+- Capture the public Mini App payload keys, required services/prices/content, and booking/date/slot response shape from synthetic data.
+- Record the exact CMS/VIP/booking test rows before each test; reset only staging rows between runs.
+- Run public read tests at least three times and record durations. Do not infer performance from one request.
+- Confirm the customer VIP `doPost` test can validate signed Telegram initData in staging without using production secrets.
+
+### Phase C — guard tests
+- Add guards in staging only, then test every client-callable admin function directly, not just the UI.
+- Negative cases: no credential, wrong admin ID, missing config, expired credential, replayed credential, expired session, malformed request, unknown operation.
+- Positive cases: authorized admin can read permitted dashboard data and perform each allowlisted mutation; audit logs derive actor identity from verified server session.
+- Check that no denied request changes synthetic sheet values or returns private rows.
+
+### Phase D — regression and release decision
+- Re-run public payload and booking/VIP flows against the baseline.
+- Confirm public data builder does not read bookings, customers, payments, logs, private settings, or other private collections.
+- Confirm approval/rejection from the authorized Telegram actor works once and repeat/replay attempts do not duplicate state transitions or notifications.
+- Attach redacted evidence to the security PR. Production deployment remains a separate step requiring explicit approval.
+
+### Manual boundary
+- Creating the isolated Apps Script project, enabling its services, and creating a staging bot require the account owner to use Google/Telegram interfaces. No production credential should be sent through chat.
+- Until those staging assets exist, source review and documentation are the only safe actions available through the connected GitHub repository.
